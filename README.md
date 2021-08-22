@@ -1,3 +1,14 @@
+# Tanks TAS
+
+This fork of Tanks: The Crusades adds features to the game to help speedrunners create Tool Assisted Speedruns. To download a working version, head to the releases tab.
+
+## Features
+- Slow down (or speed up) the entire game, including timer, movement, shooting cooldown, enemy AI, and everything else, except the actual framerate.
+- Lag switch, which tricks the game into thinking there was a lag spike. This cause the game to skip ahead in time, allowing tanks and bullets to clip through walls. The timer is increased by the skipped time.
+- TAS notice, always visible on screen.
+
+Below is the original README for Tanks.
+
 # Tanks
 
 Tanks is a game written in Java inspired by a game of the same name on the Wii.<br>
