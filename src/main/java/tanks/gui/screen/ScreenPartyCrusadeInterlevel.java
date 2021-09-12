@@ -66,17 +66,18 @@ public class ScreenPartyCrusadeInterlevel extends Screen implements IDarkScreen
     }
     );
 
-    Button quitCrusadeEnd = new Button(this.centerX, this.centerY, this.objWidth, this.objHeight, "Back to party", new Runnable()
+    Button quitCrusadeEnd = new Button(this.centerX, this.centerY, this.objWidth, this.objHeight, "Continue", new Runnable()
     {
         @Override
         public void run()
         {
             if (checkCrusadeEnd())
             {
-                Game.resetTiles();
-                Crusade.crusadeMode = false;
-                Crusade.currentCrusade = null;
-                Game.screen = ScreenPartyHost.activeScreen;
+                if (Panel.win)
+                    Crusade.currentCrusade.currentLevel++;
+
+                Game.cleanUp();
+                Game.screen = new ScreenCrusadeStats(Crusade.currentCrusade, Crusade.currentCrusade.crusadePlayers.get(Game.player), true);
             }
         }
     }
@@ -116,8 +117,40 @@ public class ScreenPartyCrusadeInterlevel extends Screen implements IDarkScreen
         public void run()
         {
             Game.resetTiles();
-            Game.screen = new ScreenPartyLobby();
             ScreenGame.versus = false;
+
+            if (Crusade.currentCrusade != null)
+            {
+                CrusadePlayer us = null;
+                for (Player p: Crusade.currentCrusade.crusadePlayers.keySet())
+                {
+                    if (p.clientID.equals(Game.clientID))
+                        us = Crusade.currentCrusade.getCrusadePlayer(p);
+                }
+
+                Game.screen = new ScreenCrusadeStats(Crusade.currentCrusade, us, true);
+            }
+            else
+                Game.screen = new ScreenPartyLobby();
+        }
+    }
+    );
+
+    Button save = new Button(0, 0, this.objHeight * 1.5, this.objHeight * 1.5, "", new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            ScreenSaveLevel sc = new ScreenSaveLevel(System.currentTimeMillis() + "", Game.currentLevelString, Game.screen);
+            Level lev = new Level(Game.currentLevelString);
+            lev.preview = true;
+            lev.loadLevel(sc);
+            Game.screen = sc;
+
+            sc.fromInterlevel = true;
+            sc.music = music;
+            sc.musicID = musicID;
+            sc.updateDownloadButton();
         }
     }
     );
@@ -152,6 +185,13 @@ public class ScreenPartyCrusadeInterlevel extends Screen implements IDarkScreen
                 getFireworkArray().add(f);
             }
         }
+
+        save.posX = Drawing.drawing.interfaceSizeX - 40;
+        save.posY = Drawing.drawing.interfaceSizeY - 90;
+        save.image = "save.png";
+
+        save.imageSizeX = this.objHeight;
+        save.imageSizeY = this.objHeight;
     }
 
     @Override
@@ -183,6 +223,8 @@ public class ScreenPartyCrusadeInterlevel extends Screen implements IDarkScreen
                 }
             }
         }
+
+        save.update();
     }
 
     @Override
@@ -267,6 +309,8 @@ public class ScreenPartyCrusadeInterlevel extends Screen implements IDarkScreen
             Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 23 / 6, msg2);
         else
             Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 25 / 6, msg2);
+
+        save.draw();
     }
 
 
@@ -295,9 +339,9 @@ public class ScreenPartyCrusadeInterlevel extends Screen implements IDarkScreen
         }
 
         Game.resetTiles();
-        Crusade.crusadeMode = false;
-        Crusade.currentCrusade = null;
-        Game.screen = ScreenPartyHost.activeScreen;
+
+        Game.cleanUp();
+        Game.screen = new ScreenCrusadeStats(Crusade.currentCrusade, Crusade.currentCrusade.getCrusadePlayer(Game.player), true);
 
         return false;
     }

@@ -202,7 +202,9 @@ public class ScreenOptions extends Screen
 			f.println("music=" + Game.musicEnabled);
 			f.println("music_volume=" + Game.musicVolume);
 			f.println("auto_start=" + Game.autostart);
+			f.println("full_stats=" + Game.fullStats);
 			f.println("timer=" + Game.showSpeedrunTimer);
+			f.println("deterministic=" + Game.deterministicMode);
 			f.println("info_bar=" + Drawing.drawing.enableStats);
 			f.println("port=" + Game.port);
 			f.println("last_party=" + Game.lastParty);
@@ -323,8 +325,14 @@ public class ScreenOptions extends Screen
 					case "auto_start":
 						Game.autostart = Boolean.parseBoolean(optionLine[1]);
 						break;
+					case "full_stats":
+						Game.fullStats = Boolean.parseBoolean(optionLine[1]);
+						break;
 					case "timer":
 						Game.showSpeedrunTimer = Boolean.parseBoolean(optionLine[1]);
+						break;
+					case "deterministic":
+						Game.deterministicMode = Boolean.parseBoolean(optionLine[1]);
 						break;
 					case "info_bar":
 						Drawing.drawing.showStats(Boolean.parseBoolean(optionLine[1]));

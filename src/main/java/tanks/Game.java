@@ -11,8 +11,8 @@ import tanks.gui.ChatFilter;
 import tanks.gui.input.InputBindingGroup;
 import tanks.gui.input.InputBindings;
 import tanks.gui.screen.*;
-import tanks.gui.screen.levelbuilder.OverlayEditorMenu;
-import tanks.gui.screen.levelbuilder.ScreenLevelEditor;
+import tanks.gui.screen.leveleditor.OverlayEditorMenu;
+import tanks.gui.screen.leveleditor.ScreenLevelEditor;
 import tanks.hotbar.Hotbar;
 import tanks.hotbar.ItemBar;
 import tanks.hotbar.item.*;
@@ -90,8 +90,8 @@ public class Game
 	public static double[][] tilesDepth = new double[28][18];
 
 	//Remember to change the version in android's build.gradle and ios's robovm.properties
-	public static final String version = "Tanks v1.2.2a";
-	public static final int network_protocol = 35;
+	public static final String version = "Tanks v1.2.2d";
+	public static final int network_protocol = 36;
 	public static boolean debug = false;
 	public static boolean traceAllRays = false;
 	public static final boolean cinematic = false;
@@ -128,6 +128,9 @@ public class Game
 	public static boolean enableChatFilter = true;
 	public static boolean showSpeedrunTimer = false;
 
+	public static boolean deterministicMode = false;
+	public static int seed = 0;
+
 	public static String crashMessage = "Yay! The game hasn't crashed yet!";
 	public static String crashLine = "Yay! The game hasn't crashed yet!";
 
@@ -138,9 +141,6 @@ public class Game
     public static Screen screen;
 
 	public static String ip = "";
-
-	//public static boolean fancyGraphics = true;
-	//public static boolean superGraphics = true;
 
 	public static boolean fancyTerrain = true;
 	public static boolean effectsEnabled = true;
@@ -156,6 +156,7 @@ public class Game
 	public static boolean autostart = true;
 	public static boolean autoReady = false;
 	public static double startTime = 400;
+	public static boolean fullStats = false;
 
 	public static double partyStartTime = 400;
 	public static boolean disablePartyFriendlyFire = false;
@@ -244,6 +245,7 @@ public class Game
 		NetworkEventMap.register(EventReturnToLobby.class);
 		NetworkEventMap.register(EventBeginCrusade.class);
 		NetworkEventMap.register(EventReturnToCrusade.class);
+		NetworkEventMap.register(EventShowCrusadeStats.class);
 		NetworkEventMap.register(EventLoadCrusadeHotbar.class);
 		NetworkEventMap.register(EventSetupHotbar.class);
 		NetworkEventMap.register(EventAddShopItem.class);
@@ -428,6 +430,9 @@ public class Game
 		registerItem(ItemBullet.class, ItemBullet.item_name, "bullet_normal.png");
 		registerItem(ItemMine.class, ItemMine.item_name, "mine.png");
 		registerItem(ItemShield.class, ItemShield.item_name, "shield.png");
+
+		TankPlayer.default_bullet = Item.parseItem(null, "Basic bullet,bullet_normal.png,1,0,1,100,bullet,normal,trail,3.125,1,1.0,5,20.0,10.0,1.0,false");
+		TankPlayer.default_mine = Item.parseItem(null, "Basic mine,mine.png,1,0,1,100,mine,1000.0,50.0,125.0,2.0,2,50.0,30.0,true");
 
 		homedir = System.getProperty("user.home");
 
@@ -785,7 +790,9 @@ public class Game
 		Game.loadLevel(game.fileManager.getFile(Game.homedir + levelDir + "/" + name), s);
 		s.paused = true;
 
-		Game.screen = new OverlayEditorMenu(s, s);
+		OverlayEditorMenu m = new OverlayEditorMenu(s, s);
+		m.showTime = true;
+		Game.screen = m;
 	}
 
 	public static void exitToCrash(Throwable e)

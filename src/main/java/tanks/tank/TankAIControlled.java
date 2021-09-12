@@ -10,6 +10,7 @@ import tanks.obstacle.ObstacleTeleporter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 /** This class is the 'skeleton' tank class.
  *  It can be extended and values can be changed to easily produce an AI for another tank.
@@ -63,19 +64,19 @@ public class TankAIControlled extends Tank
 	/** Threshold angle difference needed between angle and aimAngle to count as touching the target enemy*/
 	public double aimThreshold = 0.05;
 
-	/** Minimum time to randomly change idle direction, added to turretIdleTimerRandom * Math.random()*/
+	/** Minimum time to randomly change idle direction, added to turretIdleTimerRandom * this.random.nextDouble()*/
 	public double turretIdleTimerBase = 25;
-	/** Random factor in calculating time to randomly change idle direction, multiplied by Math.random() and added to turretIdleTimerBase*/
+	/** Random factor in calculating time to randomly change idle direction, multiplied by this.random.nextDouble() and added to turretIdleTimerBase*/
 	public double turretIdleTimerRandom = 500;
 
-	/** Minimum time to lay a mine, added to mineTimerRandom * Math.random()*/
+	/** Minimum time to lay a mine, added to mineTimerRandom * this.random.nextDouble()*/
 	public double mineTimerBase = 2000;
-	/** Random factor in calculating time to lay a mine, multiplied by Math.random() and added to mineTimerBase*/
+	/** Random factor in calculating time to lay a mine, multiplied by this.random.nextDouble() and added to mineTimerBase*/
 	public double mineTimerRandom = 4000;
 
-	/** Minimum time in between shooting bullets, added to cooldownRandom * Math.random()*/
+	/** Minimum time in between shooting bullets, added to cooldownRandom * this.random.nextDouble()*/
 	public double cooldownBase = 60;
-	/** Random factor in calculating time between shooting bullets, multiplied by Math.random() and added to cooldownBase*/
+	/** Random factor in calculating time between shooting bullets, multiplied by this.random.nextDouble() and added to cooldownBase*/
 	public double cooldownRandom = 20;
 
 	/** Time waited when changing direction of motion*/
@@ -148,7 +149,7 @@ public class TankAIControlled extends Tank
 	protected double aimAngle = 0;
 
 	/** Direction in which the tank moves when idle*/
-	protected double direction = ((int)(Math.random() * 8))/2.0;
+	protected double direction;
 
 	/** When enabled, the current motion direction will be kept until the tank decides to change direction*/
 	protected boolean overrideDirection = false;
@@ -157,7 +158,7 @@ public class TankAIControlled extends Tank
 	protected double avoidDirection = 0;
 
 	/** Time until the tank will change its idle turret's direction*/
-	protected double idleTimer = (Math.random() * turretIdleTimerRandom) + turretIdleTimerBase;
+	protected double idleTimer;
 
 	/** Time between shooting bullets*/
 	protected double cooldown = 200;
@@ -211,11 +212,18 @@ public class TankAIControlled extends Tank
 	protected double aX;
 	protected double aY;
 
+	/** The random number generator the tank uses to make decisions*/
+	protected Random random;
+
 	public TankAIControlled(String name, double x, double y, double size, double r, double g, double b, double angle, ShootAI ai)
 	{
 		super(name, x, y, size, r, g, b);
 
-		if (Math.random() < 0.5)
+		this.random = new Random(Level.random.nextLong());
+		this.direction = ((int)(this.random.nextDouble() * 8)) / 2.0;
+		this.idleTimer = (this.random.nextDouble() * turretIdleTimerRandom) + turretIdleTimerBase;
+
+		if (this.random.nextDouble() < 0.5)
 			this.idlePhase = RotationPhase.counterClockwise;
 
 		this.angle = angle;
@@ -293,7 +301,7 @@ public class TankAIControlled extends Tank
 
 			double dist = a2.age;
 			// Cancels if the bullet will hit another enemy
-			double offset = (Math.random() * this.aimAccuracyOffset - (this.aimAccuracyOffset / 2)) / Math.max((dist / 100.0), 2);
+			double offset = (this.random.nextDouble() * this.aimAccuracyOffset - (this.aimAccuracyOffset / 2)) / Math.max((dist / 100.0), 2);
 
 			if (this.disableOffset)
 			{
@@ -330,7 +338,7 @@ public class TankAIControlled extends Tank
 		Game.movables.add(b);
 		Game.eventsOut.add(new EventShootBullet(b));
 
-		this.cooldown = Math.random() * this.cooldownRandom + this.cooldownBase;
+		this.cooldown = this.random.nextDouble() * this.cooldownRandom + this.cooldownBase;
 
 		if (this.shootAIType.equals(ShootAI.alternate))
 			this.straightShoot = !this.straightShoot;
@@ -408,7 +416,7 @@ public class TankAIControlled extends Tank
 
 	public void updateIdleMotion()
 	{
-		if (Math.random() < this.motionChangeChance * Panel.frameFrequency || this.hasCollided)
+		if (this.random.nextDouble() < this.motionChangeChance * Panel.frameFrequency || this.hasCollided)
 		{
 			this.overrideDirection = false;
 
@@ -431,7 +439,7 @@ public class TankAIControlled extends Tank
 				}
 			}
 
-			int chosenDir = (int)(Math.random() * directions.size());
+			int chosenDir = (int)(this.random.nextDouble() * directions.size());
 
 			if (directions.size() == 0)
 				this.direction = (this.direction + 2) % 4;
@@ -443,7 +451,7 @@ public class TankAIControlled extends Tank
 				this.motionPauseTimer = this.directionChangeCooldown;
 
 			if (this.canHide)
-				this.motionPauseTimer += this.hideAmount * (Math.random() + 1);
+				this.motionPauseTimer += this.hideAmount * (this.random.nextDouble() + 1);
 		}
 
 		if (this.motionPauseTimer > 0)
@@ -461,7 +469,7 @@ public class TankAIControlled extends Tank
 			}
 		}
 
-		if (!this.currentlySeeking && this.enablePathfinding && Math.random() < this.seekChance * Panel.frameFrequency && this.posX > 0 && this.posX < Game.currentSizeX * Game.tile_size && this.posY > 0 && this.posY < Game.currentSizeY * Game.tile_size)
+		if (!this.currentlySeeking && this.enablePathfinding && this.random.nextDouble() < this.seekChance * Panel.frameFrequency && this.posX > 0 && this.posX < Game.currentSizeX * Game.tile_size && this.posY > 0 && this.posY < Game.currentSizeY * Game.tile_size)
 		{
 			Tile[][] tiles = new Tile[Game.currentSizeX][Game.currentSizeY];
 
@@ -469,7 +477,7 @@ public class TankAIControlled extends Tank
 			{
 				for (int j = 0; j < tiles[i].length; j++)
 				{
-					tiles[i][j] = new Tile(i, j);
+					tiles[i][j] = new Tile(this.random, i, j);
 				}
 			}
 
@@ -627,6 +635,7 @@ public class TankAIControlled extends Tank
 				if (!(b.tank == this && b.age < 20) && b.shouldDodge && Math.abs(b.posX - this.posX) < Game.tile_size * 10 && Math.abs(b.posY - this.posY) < Game.tile_size * 10 && b.getMotionInDirection(b.getAngleInDirection(this.posX, this.posY)) > 0)
 				{
 					Ray r = b.getRay();
+					r.tankHitSizeMul = 4;
 
 					Movable m = r.getTarget(3, this);
 					if (m != null)
@@ -717,7 +726,7 @@ public class TankAIControlled extends Tank
 
 		if (idleTimer <= 0)
 		{
-			this.idleTimer = Math.random() * turretIdleTimerRandom + turretIdleTimerBase;
+			this.idleTimer = this.random.nextDouble() * turretIdleTimerRandom + turretIdleTimerBase;
 			if (this.idlePhase == RotationPhase.clockwise)
 				this.idlePhase = RotationPhase.counterClockwise;
 			else
@@ -848,7 +857,7 @@ public class TankAIControlled extends Tank
 			if (speed < this.bulletSpeed)
 			{
 				double d = this.getAngleInDirection(nearestBullet.posX, nearestBullet.posY) - Math.asin(speed / this.bulletSpeed);
-				
+
 				if (!Double.isNaN(d))
 				{
 					this.aimAngle = d;
@@ -871,20 +880,20 @@ public class TankAIControlled extends Tank
 	{
 		if (this.searchPhase == RotationPhase.clockwise)
 		{
-			searchAngle += Math.random() * 0.1 * Panel.frameFrequency;
+			searchAngle += this.random.nextDouble() * 0.1 * Panel.frameFrequency;
 		}
 		else if (this.searchPhase == RotationPhase.counterClockwise)
 		{
-			searchAngle -= Math.random() * 0.1 * Panel.frameFrequency;
+			searchAngle -= this.random.nextDouble() * 0.1 * Panel.frameFrequency;
 		}
 		else
 		{
-			searchAngle = this.lockedAngle + Math.random() * this.searchRange - this.searchRange / 2;
+			searchAngle = this.lockedAngle + this.random.nextDouble() * this.searchRange - this.searchRange / 2;
 			this.aimTimer -= Panel.frameFrequency;
 			if (this.aimTimer <= 0)
 			{
 				this.aimTimer = 0;
-				if (Math.random() < 0.5)
+				if (this.random.nextDouble() < 0.5)
 					this.searchPhase = RotationPhase.clockwise;
 				else
 					this.searchPhase = RotationPhase.counterClockwise;
@@ -1013,7 +1022,7 @@ public class TankAIControlled extends Tank
 			else
 				this.idlePhase = RotationPhase.clockwise;
 
-			this.idleTimer = (Math.random() * this.turretIdleTimerRandom) + this.turretIdleTimerBase;
+			this.idleTimer = (this.random.nextDouble() * this.turretIdleTimerRandom) + this.turretIdleTimerBase;
 		}
 	}
 
@@ -1048,7 +1057,7 @@ public class TankAIControlled extends Tank
 		double nearestTimer = Double.MAX_VALUE;
 
 		if (this.mineTimer == -1)
-			this.mineTimer = (Math.random() * mineTimerRandom + mineTimerBase);
+			this.mineTimer = (this.random.nextDouble() * mineTimerRandom + mineTimerBase);
 
 		Movable nearest = null;
 
@@ -1124,7 +1133,7 @@ public class TankAIControlled extends Tank
 		if (Math.abs(nearestX) + Math.abs(nearestY) <= 1 && this.mineFleeTimer <= 0)
 		{
 			this.overrideDirection = true;
-			this.setPolarAcceleration(Math.random() * 2 * Math.PI, acceleration);
+			this.setPolarAcceleration(this.random.nextDouble() * 2 * Math.PI, acceleration);
 		}
 	}
 
@@ -1135,7 +1144,7 @@ public class TankAIControlled extends Tank
 		Mine m = new Mine(this.posX, this.posY, this.mineFuseLength, this);
 		Game.eventsOut.add(new EventLayMine(m));
 		Game.movables.add(m);
-		this.mineTimer = (Math.random() * mineTimerRandom + mineTimerBase);
+		this.mineTimer = (this.random.nextDouble() * mineTimerRandom + mineTimerBase);
 
 		int count = mineFleeDistances.length;
 		double[] d = mineFleeDistances;
@@ -1164,7 +1173,7 @@ public class TankAIControlled extends Tank
 			}
 		}
 
-		//double angleV = this.getPolarDirection() + Math.PI + (Math.random() - 0.5) * Math.PI / 2;
+		//double angleV = this.getPolarDirection() + Math.PI + (this.random.nextDouble() - 0.5) * Math.PI / 2;
 		this.overrideDirection = true;
 		this.setPolarAcceleration(greatest * 2.0 / count * Math.PI, acceleration);
 		laidMine = true;
@@ -1184,8 +1193,8 @@ public class TankAIControlled extends Tank
 		public double posX;
 		public double posY;
 
-		public double shiftedX = (Math.random() - 0.5) * Game.tile_size / 2;
-		public double shiftedY = (Math.random() - 0.5) * Game.tile_size / 2;
+		public double shiftedX;
+		public double shiftedY;
 
 		public int tileX;
 		public int tileY;
@@ -1196,8 +1205,11 @@ public class TankAIControlled extends Tank
 		public boolean interesting = false;
 		public int unfavorability = 0;
 
-		public Tile(int x, int y)
+		public Tile(Random r, int x, int y)
 		{
+			this.shiftedX = (r.nextDouble() - 0.5) * Game.tile_size / 2;
+			this.shiftedY = (r.nextDouble() - 0.5) * Game.tile_size / 2;
+
 			this.posX = (x + 0.5) * Game.tile_size;
 			this.posY = (y + 0.5) * Game.tile_size;
 
