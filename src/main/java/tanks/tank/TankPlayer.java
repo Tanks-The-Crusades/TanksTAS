@@ -56,7 +56,6 @@ public class TankPlayer extends Tank implements IPlayerTank, IServerPlayerTank
 		this.angle = angle;
 		this.orientation = angle;
 		this.player.tank = this;
-
 		if (enableDestroyCheat)
 		{
 			this.showName = true;
@@ -65,6 +64,15 @@ public class TankPlayer extends Tank implements IPlayerTank, IServerPlayerTank
 			this.nameTag.colorB = 0;
 
 			this.nameTag.name = "Destroy cheat enabled!!!";
+		}
+		else {
+			this.showName = true;
+			this.nameTag.colorR = 255;
+			this.nameTag.colorG = 0;
+			this.nameTag.colorB = 0;
+
+			//this.nameTag = new NameTag(this, 0, this.size / 7 * 5, this.size / 2, "TAS", 0, 150, 255);
+			this.nameTag.name = "TAS " + TASTools.version;
 		}
 	}
 

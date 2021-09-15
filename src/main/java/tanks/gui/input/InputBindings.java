@@ -8,6 +8,9 @@ public class InputBindings
 {
     public BaseFile file;
 
+    public InputBindingGroup tasUI = new InputBindingGroup("tas.uiOpen", new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_RIGHT_ALT));
+    public InputBindingGroup tasLagSpike = new InputBindingGroup("tas.lagSpike", new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_F));
+
     public InputBindingGroup moveUp = new InputBindingGroup("tank.up", new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_UP), new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_W));
     public InputBindingGroup moveDown = new InputBindingGroup("tank.down", new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_DOWN), new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_S));
     public InputBindingGroup moveLeft = new InputBindingGroup("tank.left", new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_LEFT), new InputBinding(InputBinding.InputType.keyboard, InputCodes.KEY_A));

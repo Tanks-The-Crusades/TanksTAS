@@ -49,6 +49,13 @@ public class ScreenOverlayControls
         }
     });
 
+    public Button tas = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 150, this.objWidth, this.objHeight, "TAS", new Runnable() {
+        @Override
+        public void run() {
+            Game.screen = new ScreenControlsTAS();
+        }
+    });
+
     Button reset = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 290, this.objWidth, this.objHeight, "Reset", new Runnable()
     {
         @Override
@@ -76,6 +83,7 @@ public class ScreenOverlayControls
         tank.enabled = !(Game.screen instanceof ScreenControlsTank);
         hotbar.enabled = !(Game.screen instanceof ScreenControlsHotbar);
         editor.enabled = !(Game.screen instanceof ScreenControlsEditor);
+        tas.enabled = !(Game.screen instanceof ScreenControlsTAS);
 
         lastControlsScreen = Game.screen;
 
@@ -83,6 +91,7 @@ public class ScreenOverlayControls
         tank.update();
         hotbar.update();
         editor.update();
+        tas.update();
         reset.update();
         back.update();
     }
@@ -105,6 +114,7 @@ public class ScreenOverlayControls
         tank.draw();
         hotbar.draw();
         editor.draw();
+        tas.draw();
         reset.draw();
         back.draw();
     }

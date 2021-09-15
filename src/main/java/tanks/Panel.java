@@ -82,6 +82,8 @@ public class Panel
 
 	public boolean started = false;
 
+    public static boolean lagFrame = false;
+
 	public static void initialize()
 	{
 		if (!initialized)
@@ -268,6 +270,17 @@ public class Panel
 			Panel.frameFrequency = 100.0 / 60;
 		else
 			Panel.frameFrequency = Game.game.window.frameFrequency;
+
+        Panel.frameFrequency *= TASTools.getGameSpeed();
+
+        if (Game.game.input.tasLagSpike.isValid()) {
+            Panel.frameFrequency *= 25 * TASTools.lagTime / TASTools.getGameSpeed();
+            TASTools.lagNotice = 7;
+            Game.game.input.tasLagSpike.invalidate();
+
+            lagFrame = true;
+        } else
+            lagFrame = false;
 
 		Game.game.window.showKeyboard = false;
 
@@ -480,6 +493,15 @@ public class Panel
 
 		forceRefreshMusic = false;
 
+        if (Game.game.input.tasUI.isValid()) {
+            if (Game.screen instanceof ScreenTasUI)
+                Game.screen = ((ScreenTasUI) Game.screen).originalScreen;
+            else {
+                Game.screen = new ScreenTasUI(Game.screen);
+            }
+            Game.game.input.tasUI.invalidate();
+        }
+
 		if (Game.game.window.validPressedKeys.contains(InputCodes.KEY_F12) && Game.game.window.validPressedKeys.contains(InputCodes.KEY_LEFT_ALT) && Game.debug)
 		{
 			Game.game.window.validPressedKeys.clear();
@@ -604,6 +626,8 @@ public class Panel
 
 		Game.screen.drawPostMouse();
 
+		TASTools.draw_notice();
+
 		if (!Game.game.window.drawingShadow && (Game.screen instanceof ScreenGame && !(((ScreenGame) Game.screen).paused && !ScreenPartyHost.isServer && !ScreenPartyLobby.isClient)))
 			this.age += Panel.frameFrequency;
 	}
@@ -646,6 +670,8 @@ public class Panel
 
 			Drawing.drawing.drawInterfaceImage("cursor.png", mx, my, 48, 48);
 		}
+
+		TASTools.draw_mouse_notice(mx, my);
 	}
 
 	public void drawBar()

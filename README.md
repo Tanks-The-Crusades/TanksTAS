@@ -1,3 +1,5 @@
+> **Download Link:** [https://github.com/Tanks-The-Crusades/TanksTAS/releases/latest](https://github.com/Tanks-The-Crusades/TanksTAS/releases/latest)
+
 # Tanks TAS
 
 This fork of Tanks: The Crusades adds features to the game to help speedrunners create Tool Assisted Speedruns. To download a working version, head to the releases tab.
@@ -6,6 +8,12 @@ This fork of Tanks: The Crusades adds features to the game to help speedrunners 
 - Slow down (or speed up) the entire game, including timer, movement, shooting cooldown, enemy AI, and everything else, except the actual framerate.
 - Lag switch, which tricks the game into thinking there was a lag spike. This cause the game to skip ahead in time, allowing tanks and bullets to clip through walls. The timer is increased by the skipped time.
 - TAS notice, always visible on screen.
+
+## Planned Features
+- Input Display
+- Bullet trajectory display?
+- Freeze time (different from pausing because it sets delta time to 0 instead of actually pausing, meaning you can aim, shoot (if you're not on cooldown), and lay mines (also if you're not on cooldown). Until you unfreeze time, the bullet won't move and the mine fuse won't decrease.
+- Frame by frame? (Basically freeze time, but you can toggle input keys)
 
 Below is the original README for Tanks.
 
