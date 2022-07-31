@@ -13,81 +13,49 @@ public class ScreenOverlayControls
     public double objXSpace = 380;
     public double objYSpace = 60;
 
-    public Button game = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 - 90, this.objWidth, this.objHeight, "Game", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenControlsGame();
-        }
-    });
+    public Button game = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 - 120, this.objWidth, this.objHeight, "Game", () -> Game.screen = new ScreenControlsGame());
 
-    public Button tank = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 - 30, this.objWidth, this.objHeight, "Tank", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenControlsTank();
-        }
-    });
+    public Button camera = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 - 60, this.objWidth, this.objHeight, "Camera", () -> Game.screen = new ScreenControlsCamera());
 
-    public Button hotbar = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 30, this.objWidth, this.objHeight, "Hotbar", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenControlsHotbar();
-        }
-    });
+    public Button tank = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 - 0, this.objWidth, this.objHeight, "Tank", () -> Game.screen = new ScreenControlsTank());
 
-    public Button editor = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 90, this.objWidth, this.objHeight, "Editor", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenControlsEditor();
-        }
-    });
+    public Button hotbar = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 60, this.objWidth, this.objHeight, "Hotbar", () -> Game.screen = new ScreenControlsHotbar());
 
-    public Button tas = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 150, this.objWidth, this.objHeight, "TAS", new Runnable() {
+    public Button tas = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 180, this.objWidth, this.objHeight, "TAS", new Runnable() {
         @Override
         public void run() {
             Game.screen = new ScreenControlsTAS();
         }
     });
 
-    Button reset = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 290, this.objWidth, this.objHeight, "Reset", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenResetControls();
-        }
-    }
-    );
+    public Button editor = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 120, this.objWidth, this.objHeight, "Editor", () -> Game.screen = new ScreenControlsEditor());
 
-    Button back = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 350, this.objWidth, this.objHeight, "Back", new Runnable()
+    Button reset = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 290, this.objWidth, this.objHeight, "Reset", () -> Game.screen = new ScreenResetControls());
+
+    Button back = new Button(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 + 350, this.objWidth, this.objHeight, "Back", () ->
     {
-        @Override
-        public void run()
-        {
-            Game.game.input.save();
-            Game.screen = new ScreenOptionsInputDesktop();
-        }
+        Game.game.input.save();
+        Game.screen = new ScreenOptionsInputDesktop();
     }
     );
 
     public void update()
     {
-        game.enabled = !(Game.screen instanceof ScreenControlsGame);
-        tank.enabled = !(Game.screen instanceof ScreenControlsTank);
-        hotbar.enabled = !(Game.screen instanceof ScreenControlsHotbar);
-        editor.enabled = !(Game.screen instanceof ScreenControlsEditor);
+        Screen s = Game.screen;
+        if (s instanceof ScreenBindInput)
+            s = ((ScreenBindInput) s).previous;
+
+        game.enabled = !(s instanceof ScreenControlsGame);
+        camera.enabled = !(s instanceof ScreenControlsCamera);
+        tank.enabled = !(s instanceof ScreenControlsTank);
+        hotbar.enabled = !(s instanceof ScreenControlsHotbar);
+        editor.enabled = !(s instanceof ScreenControlsEditor);
         tas.enabled = !(Game.screen instanceof ScreenControlsTAS);
 
         lastControlsScreen = Game.screen;
 
         game.update();
+        camera.update();
         tank.update();
         hotbar.update();
         editor.update();
@@ -108,9 +76,10 @@ public class ScreenOverlayControls
 
         Drawing.drawing.setColor(255, 255, 255);
         Drawing.drawing.setInterfaceFontSize(Game.screen.titleSize);
-        Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 - 350, "Controls");
+        Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 6, Drawing.drawing.interfaceSizeY / 2 - 350, "Controls");
 
         game.draw();
+        camera.draw();
         tank.draw();
         hotbar.draw();
         editor.draw();

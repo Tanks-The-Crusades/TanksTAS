@@ -73,14 +73,7 @@ public class ScreenOptionsSound extends Screen
             , Math.round(Game.soundVolume * 100f), 0, 100, 1);
 
 
-    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenOptions();
-        }
-    }
+    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", () -> Game.screen = new ScreenOptions()
     );
 
     @Override
@@ -102,6 +95,6 @@ public class ScreenOptionsSound extends Screen
         back.draw();
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
         Drawing.drawing.setColor(0, 0, 0);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Sound options");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Sound options");
     }
 }

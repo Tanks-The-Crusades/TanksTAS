@@ -23,14 +23,7 @@ public class ScreenOptionsMultiplayerColor extends Screen
 
     public String secondaryColorText = "Second color: ";
 
-    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenOptionsMultiplayer();
-        }
-    }
+    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", () -> Game.screen = new ScreenOptionsMultiplayer()
     );
 
     Button enableSecondary = new Button(this.centerX, this.centerY + this.objYSpace * 2.5, this.objWidth, this.objHeight, "", new Runnable()
@@ -41,9 +34,9 @@ public class ScreenOptionsMultiplayerColor extends Screen
             Game.player.enableSecondaryColor = !Game.player.enableSecondaryColor;
 
             if (Game.player.enableSecondaryColor)
-                enableSecondary.text = secondaryColorText + ScreenOptions.onText;
+                enableSecondary.setText(secondaryColorText, ScreenOptions.onText);
             else
-                enableSecondary.text = secondaryColorText + ScreenOptions.offText;
+                enableSecondary.setText(secondaryColorText, ScreenOptions.offText);
         }
     },
             "Allows you to pick---a custom secondary color");
@@ -55,21 +48,16 @@ public class ScreenOptionsMultiplayerColor extends Screen
             preview.posY += Game.tile_size;
 
         if (Game.player.enableSecondaryColor)
-            enableSecondary.text = secondaryColorText + ScreenOptions.onText;
+            enableSecondary.setText(secondaryColorText, ScreenOptions.onText);
         else
-            enableSecondary.text = secondaryColorText + ScreenOptions.offText;
+            enableSecondary.setText(secondaryColorText, ScreenOptions.offText);
 
-        colorRed = new TextBoxSlider(this.centerX - this.objXSpace / 2, this.centerY - this.objYSpace * 1.5, this.objWidth, this.objHeight, "Primary red", new Runnable()
+        colorRed = new TextBoxSlider(this.centerX - this.objXSpace / 2, this.centerY - this.objYSpace * 1.5, this.objWidth, this.objHeight, "Primary red", () ->
         {
-            @Override
-            public void run()
-            {
-                if (colorRed.inputText.length() <= 0)
-                    colorRed.inputText = colorRed.previousInputText;
+            if (colorRed.inputText.length() <= 0)
+                colorRed.inputText = colorRed.previousInputText;
 
-                Game.player.colorR = Integer.parseInt(colorRed.inputText);
-            }
-
+            Game.player.colorR = Integer.parseInt(colorRed.inputText);
         }
                 , Game.player.colorR, 0, 255, 1);
 
@@ -80,17 +68,12 @@ public class ScreenOptionsMultiplayerColor extends Screen
         colorRed.checkMaxValue = true;
         colorRed.integer = true;
 
-        colorGreen = new TextBoxSlider(this.centerX - this.objXSpace / 2, this.centerY, this.objWidth, this.objHeight, "Primary green", new Runnable()
+        colorGreen = new TextBoxSlider(this.centerX - this.objXSpace / 2, this.centerY, this.objWidth, this.objHeight, "Primary green", () ->
         {
-            @Override
-            public void run()
-            {
-                if (colorGreen.inputText.length() <= 0)
-                    colorGreen.inputText = colorGreen.previousInputText;
+            if (colorGreen.inputText.length() <= 0)
+                colorGreen.inputText = colorGreen.previousInputText;
 
-                Game.player.colorG = Integer.parseInt(colorGreen.inputText);
-            }
-
+            Game.player.colorG = Integer.parseInt(colorGreen.inputText);
         }
                 , Game.player.colorG, 0, 255, 1);
 
@@ -101,17 +84,12 @@ public class ScreenOptionsMultiplayerColor extends Screen
         colorGreen.checkMaxValue = true;
         colorGreen.integer = true;
 
-        colorBlue = new TextBoxSlider(this.centerX - this.objXSpace / 2, this.centerY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Primary blue", new Runnable()
+        colorBlue = new TextBoxSlider(this.centerX - this.objXSpace / 2, this.centerY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Primary blue", () ->
         {
-            @Override
-            public void run()
-            {
-                if (colorBlue.inputText.length() <= 0)
-                    colorBlue.inputText = colorBlue.previousInputText;
+            if (colorBlue.inputText.length() <= 0)
+                colorBlue.inputText = colorBlue.previousInputText;
 
-                Game.player.colorB = Integer.parseInt(colorBlue.inputText);
-            }
-
+            Game.player.colorB = Integer.parseInt(colorBlue.inputText);
         }
                 , Game.player.colorB, 0, 255, 1);
 
@@ -122,17 +100,12 @@ public class ScreenOptionsMultiplayerColor extends Screen
         colorBlue.checkMaxValue = true;
         colorBlue.integer = true;
 
-        colorRed2 = new TextBoxSlider(this.centerX + this.objXSpace / 2, this.centerY - this.objYSpace * 1.5, this.objWidth, this.objHeight, "Secondary red", new Runnable()
+        colorRed2 = new TextBoxSlider(this.centerX + this.objXSpace / 2, this.centerY - this.objYSpace * 1.5, this.objWidth, this.objHeight, "Secondary red", () ->
         {
-            @Override
-            public void run()
-            {
-                if (colorRed2.inputText.length() <= 0)
-                    colorRed2.inputText = colorRed2.previousInputText;
+            if (colorRed2.inputText.length() <= 0)
+                colorRed2.inputText = colorRed2.previousInputText;
 
-                Game.player.turretColorR = Integer.parseInt(colorRed2.inputText);
-            }
-
+            Game.player.turretColorR = Integer.parseInt(colorRed2.inputText);
         }
                 , Game.player.turretColorR, 0, 255, 1);
 
@@ -143,17 +116,12 @@ public class ScreenOptionsMultiplayerColor extends Screen
         colorRed2.checkMaxValue = true;
         colorRed2.integer = true;
 
-        colorGreen2 = new TextBoxSlider(this.centerX + this.objXSpace / 2, this.centerY + 0, this.objWidth, this.objHeight, "Secondary green", new Runnable()
+        colorGreen2 = new TextBoxSlider(this.centerX + this.objXSpace / 2, this.centerY + 0, this.objWidth, this.objHeight, "Secondary green", () ->
         {
-            @Override
-            public void run()
-            {
-                if (colorGreen2.inputText.length() <= 0)
-                    colorGreen2.inputText = colorGreen2.previousInputText;
+            if (colorGreen2.inputText.length() <= 0)
+                colorGreen2.inputText = colorGreen2.previousInputText;
 
-                Game.player.turretColorG = Integer.parseInt(colorGreen2.inputText);
-            }
-
+            Game.player.turretColorG = Integer.parseInt(colorGreen2.inputText);
         }
                 , Game.player.turretColorG, 0, 255, 1);
 
@@ -164,17 +132,12 @@ public class ScreenOptionsMultiplayerColor extends Screen
         colorGreen2.checkMaxValue = true;
         colorGreen2.integer = true;
 
-        colorBlue2 = new TextBoxSlider(this.centerX + this.objXSpace / 2, this.centerY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Secondary blue", new Runnable()
+        colorBlue2 = new TextBoxSlider(this.centerX + this.objXSpace / 2, this.centerY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Secondary blue", () ->
         {
-            @Override
-            public void run()
-            {
-                if (colorBlue2.inputText.length() <= 0)
-                    colorBlue2.inputText = colorBlue2.previousInputText;
+            if (colorBlue2.inputText.length() <= 0)
+                colorBlue2.inputText = colorBlue2.previousInputText;
 
-                Game.player.turretColorB = Integer.parseInt(colorBlue2.inputText);
-            }
-
+            Game.player.turretColorB = Integer.parseInt(colorBlue2.inputText);
         }
                 , Game.player.turretColorB, 0, 255, 1);
 
@@ -186,7 +149,6 @@ public class ScreenOptionsMultiplayerColor extends Screen
         colorBlue2.integer = true;
 
         this.preview.size *= 1.5 * Drawing.drawing.interfaceScaleZoom;
-        this.preview.turret.length *= 1.5 * Drawing.drawing.interfaceScaleZoom;
         this.preview.invulnerable = true;
         this.preview.drawAge = 50;
         this.preview.depthTest = false;
@@ -226,13 +188,22 @@ public class ScreenOptionsMultiplayerColor extends Screen
 
         enableSecondary.update();
 
-        preview.colorR = Game.player.colorR;
-        preview.colorG = Game.player.colorG;
-        preview.colorB = Game.player.colorB;
+        preview.colorR = colorRed.value;
+        preview.colorG = colorGreen.value;
+        preview.colorB = colorBlue.value;
 
-        preview.turret.colorR = Game.player.turretColorR;
-        preview.turret.colorG = Game.player.turretColorG;
-        preview.turret.colorB = Game.player.turretColorB;
+        if (!Game.player.enableSecondaryColor)
+        {
+            preview.secondaryColorR = Turret.calculateSecondaryColor(colorRed.value);
+            preview.secondaryColorG = Turret.calculateSecondaryColor(colorGreen.value);
+            preview.secondaryColorB = Turret.calculateSecondaryColor(colorBlue.value);
+        }
+        else
+        {
+            preview.secondaryColorR = colorRed2.value;
+            preview.secondaryColorG = colorGreen2.value;
+            preview.secondaryColorB = colorBlue2.value;
+        }
     }
 
     public void setupButtons(boolean initial)
@@ -263,10 +234,6 @@ public class ScreenOptionsMultiplayerColor extends Screen
             colorRed2.inputText = Game.player.turretColorR + "";
             colorGreen2.inputText = Game.player.turretColorG + "";
             colorBlue2.inputText = Game.player.turretColorB + "";
-            colorRed2.value = Game.player.turretColorR;
-            colorGreen2.value = Game.player.turretColorG;
-            colorBlue2.value = Game.player.turretColorB;
-
             colorRed2.value = Game.player.turretColorR;
             colorGreen2.value = Game.player.turretColorG;
             colorBlue2.value = Game.player.turretColorB;
@@ -339,6 +306,6 @@ public class ScreenOptionsMultiplayerColor extends Screen
         back.draw();
 
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Multiplayer tank color");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Multiplayer tank color");
     }
 }

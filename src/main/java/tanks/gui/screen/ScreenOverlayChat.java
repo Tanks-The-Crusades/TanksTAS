@@ -6,8 +6,7 @@ import tanks.Level;
 import tanks.Panel;
 import tanks.gui.ChatBox;
 import tanks.gui.ChatMessage;
-import tanks.tank.Tank;
-import tanks.tank.Turret;
+import tanks.tank.TankModels;
 
 import java.util.ArrayList;
 
@@ -25,6 +24,8 @@ public class ScreenOverlayChat
     {
         if (ScreenPartyLobby.isClient && (Game.connectedToOnline || ScreenPartyLobby.chatbox == null))
             return;
+
+        Game.game.window.shapeRenderer.setBatchMode(false, false, false);
 
         ChatBox chatbox = null;
         ArrayList<ChatMessage> chat = null;
@@ -84,7 +85,7 @@ public class ScreenOverlayChat
                         Drawing.drawing.fillInterfaceRect(width / 2 + xStart, Drawing.drawing.interfaceSizeY - (i + (c.lines.size() - 1)) * 30 - 70 - radius / 2, width + xPad, radius);
                         Drawing.drawing.fillInterfaceRect(width / 2 + xStart, Drawing.drawing.interfaceSizeY - (i + (c.lines.size() - 1) / 2.0) * 30 - 70, width + xPad + radius * 2, height + yPad - radius * 2);
 
-                        Game.game.window.setBatchMode(true, false, false);
+                        Game.game.window.shapeRenderer.setBatchMode(true, false, false);
 
                         for (int j = 0; j < 15; j++)
                         {
@@ -122,7 +123,7 @@ public class ScreenOverlayChat
                                     Drawing.drawing.interfaceSizeY - i * 30 - 70 + Math.sin((j + 16) / 30.0 * Math.PI) * radius - 30 * (c.lines.size() - 1), 0);
                         }
 
-                        Game.game.window.setBatchMode(false, false, false);
+                        Game.game.window.shapeRenderer.setBatchMode(false, false, false);
 
                         double x = 34;
                         double y = Drawing.drawing.interfaceSizeY - (i + (c.lines.size() - 1)) * 30 - 70;
@@ -131,17 +132,17 @@ public class ScreenOverlayChat
                         if (c.enableTankIcon)
                         {
                             Drawing.drawing.setColor(c.r2, c.g2, c.b2);
-                            Drawing.drawing.drawInterfaceModel(Tank.base_model, x, y, size, size, 0);
+                            Drawing.drawing.drawInterfaceModel(TankModels.tank.base, x, y, size, size, 0);
 
                             Drawing.drawing.setColor(c.r1, c.g1, c.b1);
-                            Drawing.drawing.drawInterfaceModel(Tank.color_model, x, y, size, size, 0);
+                            Drawing.drawing.drawInterfaceModel(TankModels.tank.color, x, y, size, size, 0);
 
                             Drawing.drawing.setColor(c.r2, c.g2, c.b2);
 
-                            Drawing.drawing.drawInterfaceModel(Turret.turret_model, x, y, size, size, 0);
+                            Drawing.drawing.drawInterfaceModel(TankModels.tank.turret, x, y, size, size, 0);
 
                             Drawing.drawing.setColor((c.r1 + c.r2) / 2, (c.g1 + c.g2) / 2, (c.b1 + c.b2) / 2);
-                            Drawing.drawing.drawInterfaceModel(Turret.base_model, x, y, size, size, 0);
+                            Drawing.drawing.drawInterfaceModel(TankModels.tank.turretBase, x, y, size, size, 0);
                         }
 
                         for (int j = c.lines.size() - 1; j >= 0; j--)
@@ -155,7 +156,6 @@ public class ScreenOverlayChat
                                 Drawing.drawing.setColor(0, 0, 0);
 
                             Drawing.drawing.drawInterfaceText(mx, my, c.lines.get(j), false);
-
                             i++;
                         }
                     }

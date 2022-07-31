@@ -95,7 +95,7 @@ public class TankPlayerController extends Tank implements IPlayerTank
             else
             {
                 this.setMotionInDirection(this.vX + this.posX, this.vY + this.posY, this.recoilSpeed);
-                this.recoilSpeed *= Math.pow(1 - TankPlayer.base_deceleration * this.frictionModifier, Panel.frameFrequency);
+                this.recoilSpeed *= Math.pow(1 - this.friction * this.frictionModifier, Panel.frameFrequency);
             }
         }
         else if (this.inControlOfMotion)
@@ -145,12 +145,17 @@ public class TankPlayerController extends Tank implements IPlayerTank
             }
 
             if (a >= 0 && intensity >= 0.2)
+            {
+                if (Game.followingCam)
+                    a += this.angle + Math.PI / 2;
+
                 this.addPolarMotion(a, acceleration * Panel.frameFrequency);
+            }
 
             if (a == -1)
             {
-                this.vX *= Math.pow(1 - (0.05 * this.frictionModifier), Panel.frameFrequency);
-                this.vY *= Math.pow(1 - (0.05 * this.frictionModifier), Panel.frameFrequency);
+                this.vX *= Math.pow(1 - (this.friction * this.frictionModifier), Panel.frameFrequency);
+                this.vY *= Math.pow(1 - (this.friction * this.frictionModifier), Panel.frameFrequency);
 
                 if (Math.abs(this.vX) < 0.001)
                     this.vX = 0;
@@ -165,13 +170,9 @@ public class TankPlayerController extends Tank implements IPlayerTank
                 this.setPolarMotion(this.getPolarDirection(), maxVelocity);
         }
 
-        boolean shoot = false;
-        if (!Game.game.window.touchscreen && Game.game.input.shoot.isPressed())
-            shoot = true;
+        boolean shoot = !Game.game.window.touchscreen && Game.game.input.shoot.isPressed();
 
-        boolean mine = false;
-        if (!Game.game.window.touchscreen && Game.game.input.mine.isPressed())
-            mine = true;
+        boolean mine = !Game.game.window.touchscreen && Game.game.input.mine.isPressed();
 
         boolean showRange = false;
         Hotbar h = Game.player.hotbar;

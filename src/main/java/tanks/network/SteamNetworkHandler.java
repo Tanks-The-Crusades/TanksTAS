@@ -25,23 +25,12 @@ public class SteamNetworkHandler
 
 	public HashMap<Integer, ServerHandler> serverHandlersBySteamID = new HashMap<>();
 
-	protected SteamAPIWarningMessageHook clMessageHook = new SteamAPIWarningMessageHook()
-	{
-		@Override
-		public void onWarningMessage(int severity, String message)
-		{
-			System.err.println("[client debug message] (" + severity + ") " + message);
-		}
-	};
+	protected SteamAPIWarningMessageHook clMessageHook = (severity, message) -> System.err.println("[client debug message] (" + severity + ") " + message);
 
-	protected SteamUtilsCallback clUtilsCallback = new SteamUtilsCallback()
-	{
-		@Override
-		public void onSteamShutdown()
-		{
+	protected SteamUtilsCallback clUtilsCallback = () ->
+    {
 
-		}
-	};
+    };
 
 	protected static final int defaultChannel = 1;
 
@@ -54,7 +43,7 @@ public class SteamNetworkHandler
 
 	public ByteBuf sendBuf = Unpooled.buffer();
 
-	public Map<Integer, SteamID> remoteUserIDs = new ConcurrentHashMap<Integer, SteamID>();
+	public Map<Integer, SteamID> remoteUserIDs = new ConcurrentHashMap<>();
 
 	protected SteamNetworkingCallback peer2peerCallback = new SteamNetworkingCallback()
 	{
@@ -148,7 +137,12 @@ public class SteamNetworkHandler
 					readBuf.writeBytes(bytes);
 
 					if (ScreenPartyHost.isServer)
-						serverHandlersBySteamID.get(steamIDSender.getAccountID()).channelRead(null, readBuf);
+					{
+						ServerHandler h = serverHandlersBySteamID.get(steamIDSender.getAccountID());
+
+						if (h != null)
+							h.channelRead(null, readBuf);
+					}
 					else if (ScreenPartyLobby.isClient)
 						Client.handler.channelRead(null, readBuf);
 				}
@@ -330,10 +324,9 @@ public class SteamNetworkHandler
 		}
 		catch (Throwable e)
 		{
-			Game.exitToCrash(e);
+			e.printStackTrace();
+			return false;
 		}
-
-		return false;
 	}
 
 	public void exit()

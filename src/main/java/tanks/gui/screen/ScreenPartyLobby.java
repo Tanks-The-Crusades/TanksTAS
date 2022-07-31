@@ -9,6 +9,8 @@ import tanks.gui.ChatMessage;
 import tanks.network.Client;
 import tanks.network.ConnectedPlayer;
 import tanks.network.SynchronizedList;
+import tanks.tank.Tank;
+import tanks.translation.Translation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,14 +18,14 @@ import java.util.UUID;
 
 public class ScreenPartyLobby extends Screen
 {
-	public static ArrayList<ConnectedPlayer> connections = new ArrayList<ConnectedPlayer>();
+	public static ArrayList<ConnectedPlayer> connections = new ArrayList<>();
 	public static boolean isClient = false;
-	public static ArrayList<UUID> includedPlayers = new ArrayList<UUID>();
-	public static ArrayList<String> readyPlayers = new ArrayList<String>();
+	public static ArrayList<UUID> includedPlayers = new ArrayList<>();
+	public static ArrayList<String> readyPlayers = new ArrayList<>();
 	public static int remainingLives = 0;
 	public static HashMap<UUID, String> stats = new HashMap<>();
 
-	public static SynchronizedList<ChatMessage> chat = new SynchronizedList<ChatMessage>();
+	public static SynchronizedList<ChatMessage> chat = new SynchronizedList<>();
 	public static SynchronizedList<ScreenPartyHost.SharedLevel> sharedLevels = new SynchronizedList<>();
 	public static SynchronizedList<ScreenPartyHost.SharedCrusade> sharedCrusades = new SynchronizedList<>();
 
@@ -40,69 +42,32 @@ public class ScreenPartyLobby extends Screen
 	{
 		super(350, 40, 380, 60);
 
+		toggleIP.fullInfo = true;
+		toggleIP.textOffsetX = 1.5;
+		toggleIP.textOffsetY = 1.5;
+
 		this.music = "menu_4.ogg";
 		this.musicID = "menu";
 
-		ScreenPartyLobby.chatbox = new ChatBox(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 30, Drawing.drawing.interfaceSizeX - 20, 40, Game.game.input.chat, new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				Game.eventsOut.add(new EventChat(ScreenPartyLobby.chatbox.inputText));
-			}
-		});
+		ScreenPartyLobby.chatbox = new ChatBox(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 30, Drawing.drawing.interfaceSizeX - 20, 40, Game.game.input.chat, () -> Game.eventsOut.add(new EventChat(ScreenPartyLobby.chatbox.inputText)));
 	}
 
-	Button exit = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 270, this.objWidth, this.objHeight, "Leave party", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			Game.screen = new ScreenConfirmLeaveParty();
-		}
-	}
+	Button exit = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 270, this.objWidth, this.objHeight, "Leave party", () -> Game.screen = new ScreenConfirmLeaveParty()
 	);
 
 	Button nextUsernamePage = new Button(Drawing.drawing.interfaceSizeX / 2 + username_x_offset,
-			Drawing.drawing.interfaceSizeY / 2 + username_y_offset + username_spacing * (1 + entries_per_page), 300, 30, "Next page", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			usernamePage++;
-		}
-	}
+			Drawing.drawing.interfaceSizeY / 2 + username_y_offset + username_spacing * (1 + entries_per_page), 300, 30, "Next page", () -> usernamePage++
 	);
 
 	Button previousUsernamePage = new Button(Drawing.drawing.interfaceSizeX / 2 + username_x_offset, Drawing.drawing.interfaceSizeY / 2 + username_y_offset,
-			300, 30, "Previous page", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			usernamePage--;
-		}
-	}
+			300, 30, "Previous page", () -> usernamePage--
 	);
 
-	Button share = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 180, this.objWidth, this.objHeight, "Upload", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			Game.screen = new ScreenShareSelect();
-		}
-	});
+	Button share = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 180, this.objWidth, this.objHeight, "Upload", () -> Game.screen = new ScreenShareSelect());
 
-	Button shared = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 120, this.objWidth, this.objHeight, "Download", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			Game.screen = new ScreenSharedSummary(sharedLevels, sharedCrusades);
-		}
-	}
-    );
+	Button shared = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 120, this.objWidth, this.objHeight, "Download", () -> Game.screen = new ScreenSharedSummary(sharedLevels, sharedCrusades));
+
+	Button toggleIP = new Button(-1000, -1000, this.objHeight, this.objHeight, "", () -> Game.showIP = !Game.showIP, "Toggle showing IP address");
 
 	@Override
 	public void update()
@@ -117,6 +82,7 @@ public class ScreenPartyLobby extends Screen
 
 		share.update();
 		shared.update();
+		toggleIP.update();
 	}
 
 	@Override
@@ -127,14 +93,32 @@ public class ScreenPartyLobby extends Screen
 		Drawing.drawing.setColor(0, 0, 0);
 		Drawing.drawing.setInterfaceFontSize(this.textSize);
 
-		if (Client.handler.steamID == null)
-			Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 270, "Party IP Address: " + Client.currentHost + " (Port: " + Client.currentPort + ")");
+		String title = Translation.translate("Party IP Address: %s (Port: %d)", Client.currentHost, Client.currentPort);
+
+		if (Client.handler.steamID != null)
+			title = "Connected to party via Steam Peer-to-Peer";
+
+		if (!Game.showIP)
+			title = Translation.translate("Connected to party");
+
+		this.toggleIP.posX = this.centerX + Game.game.window.fontRenderer.getStringSizeX(Drawing.drawing.fontSize, title) / Drawing.drawing.interfaceScale / 2 + 30;
+		this.toggleIP.posY = this.centerY - 270;
+
+		if (Game.showIP)
+			this.toggleIP.setText("-");
 		else
-			Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 270, "Connected to party via Steam Peer-to-Peer");
+			this.toggleIP.setText("+");
 
-		Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 + username_x_offset, Drawing.drawing.interfaceSizeY / 2 - 220, "Players in this party:");
+		this.toggleIP.draw();
 
-		Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 220, "Level and crusade sharing:");
+		Drawing.drawing.setColor(0, 0, 0);
+		Drawing.drawing.setInterfaceFontSize(this.textSize);
+
+		Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 270, title);
+
+		Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2 + username_x_offset, Drawing.drawing.interfaceSizeY / 2 - 220, "Players in this party:");
+
+		Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 220, "Level and crusade sharing:");
 
 		if (connections != null)
 		{

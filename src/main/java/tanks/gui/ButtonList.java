@@ -3,6 +3,7 @@ package tanks.gui;
 import tanks.BiConsumer;
 import tanks.Drawing;
 import tanks.Level;
+import tanks.translation.Translation;
 
 import java.util.ArrayList;
 
@@ -33,6 +34,12 @@ public class ButtonList
     public double objXSpace = 380;
     public double objYSpace = 60;
 
+    public double imageR = 255;
+    public double imageG = 255;
+    public double imageB = 255;
+
+    public boolean translate = false;
+
     public boolean hideText = false;
 
     public BiConsumer<Integer, Integer> reorderBehavior;
@@ -53,6 +60,26 @@ public class ButtonList
         public void run()
         {
             page--;
+        }
+    }
+    );
+
+    Button first = new Button(Drawing.drawing.interfaceSizeX / 2 - this.objXSpace - this.objHeight * 2, Drawing.drawing.interfaceSizeY / 2, this.objHeight, this.objHeight, "", new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            page = 0;
+        }
+    }
+    );
+
+    Button last = new Button(Drawing.drawing.interfaceSizeX / 2 + this.objXSpace + this.objHeight * 2, Drawing.drawing.interfaceSizeY / 2, this.objHeight, this.objHeight, "", new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            page = (buttons.size() - 1) / rows / columns;
         }
     }
     );
@@ -81,23 +108,44 @@ public class ButtonList
         this.sortButtons();
     }
 
+    protected ButtonList()
+    {
+
+    }
+
     public void sortButtons()
     {
         this.next.posX = Drawing.drawing.interfaceSizeX / 2 + this.objXSpace / 2 + xOffset;
         this.next.posY = Drawing.drawing.interfaceSizeY / 2 + ((rows + 3) / 2.0) * this.objYSpace + yOffset + controlsYOffset;
 
-        this.next.image = "play.png";
+        this.previous.posX = Drawing.drawing.interfaceSizeX / 2 - this.objXSpace / 2 + xOffset;
+        this.previous.posY = Drawing.drawing.interfaceSizeY / 2 + ((rows + 3) / 2.0) * this.objYSpace + yOffset + controlsYOffset;
+
+        this.last.posX = this.next.posX + this.objXSpace / 2 + this.objHeight / 2;
+        this.last.posY = this.next.posY;
+
+        this.first.posX = this.previous.posX - this.objXSpace / 2 - this.objHeight / 2;
+        this.first.posY = this.previous.posY;
+
+        this.next.image = "icons/forward.png";
         this.next.imageSizeX = 25;
         this.next.imageSizeY = 25;
         this.next.imageXOffset = 145;
 
-        this.previous.image = "play.png";
-        this.previous.imageSizeX = -25;
+        this.previous.image = "icons/back.png";
+        this.previous.imageSizeX = 25;
         this.previous.imageSizeY = 25;
         this.previous.imageXOffset = -145;
 
-        this.previous.posX = Drawing.drawing.interfaceSizeX / 2 - this.objXSpace / 2 + xOffset;
-        this.previous.posY = Drawing.drawing.interfaceSizeY / 2 + ((rows + 3) / 2.0) * this.objYSpace + yOffset + controlsYOffset;
+        this.last.image = "icons/last.png";
+        this.last.imageSizeX = 20;
+        this.last.imageSizeY = 20;
+        this.last.imageXOffset = 0;
+
+        this.first.image = "icons/first.png";
+        this.first.imageSizeX = 20;
+        this.first.imageSizeY = 20;
+        this.first.imageXOffset = 0;
 
         for (int i = 0; i < buttons.size(); i++)
         {
@@ -112,6 +160,11 @@ public class ButtonList
             buttons.get(i).posX = Drawing.drawing.interfaceSizeX / 2 + offset + ((i / rows) % columns) * this.objXSpace + xOffset;
             buttons.get(i).sizeX = this.objWidth;
             buttons.get(i).sizeY = this.objHeight;
+            buttons.get(i).translated = this.translate;
+            buttons.get(i).imageR = this.imageR;
+            buttons.get(i).imageG = this.imageG;
+            buttons.get(i).imageB = this.imageB;
+
 
             if (hideText)
                 buttons.get(i).text = "";
@@ -134,32 +187,18 @@ public class ButtonList
 
             int finalI = i;
 
-            Button up = new Button(b.posX + b.sizeX / 2 - b.sizeY / 2 - b.sizeY, b.posY, b.sizeY * 0.8, b.sizeY * 0.8, "", new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    reorderBehavior.accept(finalI - 1, finalI);
-                }
-            });
+            Button up = new Button(b.posX + b.sizeX / 2 - b.sizeY / 2 - b.sizeY, b.posY, b.sizeY * 0.8, b.sizeY * 0.8, "", () -> reorderBehavior.accept(finalI - 1, finalI));
 
-            up.image = "vertical_arrow.png";
+            up.image = "icons/arrow_up.png";
             up.imageSizeX = 15;
             up.imageSizeY = 15;
             this.upButtons.add(up);
 
-            Button down = new Button(b.posX + b.sizeX / 2 - b.sizeY / 2, b.posY, b.sizeY * 0.8, b.sizeY * 0.8, "", new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    reorderBehavior.accept(finalI + 1, finalI);
-                }
-            });
+            Button down = new Button(b.posX + b.sizeX / 2 - b.sizeY / 2, b.posY, b.sizeY * 0.8, b.sizeY * 0.8, "", () -> reorderBehavior.accept(finalI + 1, finalI));
 
-            down.image = "vertical_arrow.png";
+            down.image = "icons/arrow_down.png";
             down.imageSizeX = 15;
-            down.imageSizeY = -15;
+            down.imageSizeY = 15;
             this.downButtons.add(down);
         }
     }
@@ -196,6 +235,12 @@ public class ButtonList
         {
             previous.update();
             next.update();
+
+            if ((buttons.size() - 1) / rows / columns >= 2)
+            {
+                last.update();
+                first.update();
+            }
         }
     }
 
@@ -203,6 +248,9 @@ public class ButtonList
     {
         previous.enabled = page > 0;
         next.enabled = buttons.size() > (1 + page) * rows * columns;
+
+        first.enabled = previous.enabled;
+        last.enabled = next.enabled;
 
         if (this.arrowsEnabled && this.buttons.size() > 0)
         {
@@ -220,10 +268,16 @@ public class ButtonList
                 Drawing.drawing.setColor(0, 0, 0);
 
             Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 + xOffset, 20 + Drawing.drawing.interfaceSizeY / 2 + yOffset + controlsYOffset + ((rows + 1) / 2.0) * this.objYSpace,
-                    "Page " + (page + 1) + " of " + (buttons.size() / (rows * columns) + Math.min(1, buttons.size() % (rows * columns))));
+                    Translation.translate("Page %d of %d", (page + 1), (buttons.size() / (rows * columns) + Math.min(1, buttons.size() % (rows * columns)))));
 
             previous.draw();
             next.draw();
+
+            if ((buttons.size() - 1) / rows / columns >= 2)
+            {
+                last.draw();
+                first.draw();
+            }
         }
 
         for (int i = Math.min(page * rows * columns + rows * columns, buttons.size()) - 1; i >= page * rows * columns; i--)
@@ -246,6 +300,30 @@ public class ButtonList
             {
                 upButtons.get(i).draw();
                 downButtons.get(i).draw();
+            }
+        }
+    }
+
+    public SavedFilesList clone()
+    {
+        SavedFilesList s = new SavedFilesList();
+        s.page = this.page;
+        s.xOffset = this.xOffset;
+        s.yOffset = this.yOffset;
+        s.buttons = new ArrayList<>();
+        s.buttons.addAll(this.buttons);
+
+        return s;
+    }
+
+    public void filter(String s)
+    {
+        for (int i = 0; i < this.buttons.size(); i++)
+        {
+            if (!buttons.get(i).text.toLowerCase().contains(s.toLowerCase()))
+            {
+                buttons.remove(i);
+                i--;
             }
         }
     }

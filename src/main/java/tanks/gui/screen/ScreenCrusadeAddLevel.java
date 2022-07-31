@@ -1,48 +1,56 @@
 package tanks.gui.screen;
 
+import tanks.Crusade;
 import tanks.Game;
 import tanks.gui.Button;
 import tanks.gui.SavedFilesList;
 
 public class ScreenCrusadeAddLevel extends ScreenPlaySavedLevels
 {
-    public ScreenCrusadeBuilder previous;
-    public ScreenCrusadeAddLevel instance;
+    public ScreenCrusadeEditor previous;
 
-    public ScreenCrusadeAddLevel(ScreenCrusadeBuilder s)
+    public ScreenCrusadeAddLevel(ScreenCrusadeEditor s)
     {
         this.music = "menu_4.ogg";
         this.musicID = "menu";
 
-        this.instance = this;
         this.previous = s;
+
+        this.allowClose = false;
 
         this.title = "Select a level to add";
 
-        this.quit = new Button(this.centerX, this.centerY + this.objYSpace * 5, this.objWidth, this.objHeight, "Back", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Game.screen = previous;
-            }
-        }
+        this.quit = new Button(this.centerX, this.centerY + this.objYSpace * 5, this.objWidth, this.objHeight, "Back", () -> Game.screen = previous
         );
     }
 
     @Override
     public void initializeLevels()
     {
-        this.levels = new SavedFilesList(Game.homedir + Game.levelDir, ScreenSavedLevels.page, 0, -30,
+        this.allLevels = new SavedFilesList(Game.homedir + Game.levelDir, ScreenSavedLevels.page, 0, -30,
                 (name, file) ->
                 {
-                    ScreenCrusadeEditLevel s = new ScreenCrusadeEditLevel(name, null, instance, previous);
+                    ScreenCrusadeEditLevel s = new ScreenCrusadeEditLevel(new Crusade.CrusadeLevel(name, null), this, previous);
                     if (Game.loadLevel(file, s))
                     {
-                        s.level = Game.currentLevel.levelString;
+                        s.level.levelString = Game.currentLevel.levelString;
+                        s.level.tanks.addAll(Game.currentLevel.customTanks);
                         Game.screen = s;
                     }
-                }, (file) -> null);
+                }, (file) -> "Last modified---" + Game.timeInterval(file.lastModified(), System.currentTimeMillis()) + " ago");
+
+        this.levels = allLevels.clone();
+
+        allLevels.sortedByTime = ScreenSavedLevels.sortByTime;
+        allLevels.sort(ScreenSavedLevels.sortByTime);
+
+        if (allLevels.sortedByTime)
+            sort.setHoverText("Sorting by last modified");
+        else
+            sort.setHoverText("Sorting by name");
+
+        levels = allLevels.clone();
+        newLevelsList();
     }
 
     @Override
@@ -55,5 +63,11 @@ public class ScreenCrusadeAddLevel extends ScreenPlaySavedLevels
             quit.function.run();
             Game.game.input.editorPause.invalidate();
         }
+    }
+
+    @Override
+    public void onAttemptClose()
+    {
+        Game.screen = new ScreenConfirmSaveCrusade(Game.screen, previous);
     }
 }

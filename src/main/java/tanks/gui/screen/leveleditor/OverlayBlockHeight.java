@@ -3,59 +3,32 @@ package tanks.gui.screen.leveleditor;
 import tanks.Drawing;
 import tanks.gui.Button;
 import tanks.gui.screen.Screen;
+import tanks.obstacle.Obstacle;
 
-public class OverlayBlockHeight extends ScreenLevelBuilderOverlay
+public class OverlayBlockHeight extends ScreenLevelEditorOverlay
 {
-    public Button increaseHeight = new Button(this.centerX + 100, this.centerY, 60, 60, "+", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.mouseObstacleHeight += 0.5;
-        }
-    }
-    );
+    public Button increaseHeight = new Button(this.centerX + 100, this.centerY, 60, 60, "+", () -> screenLevelEditor.mouseObstacleHeight += 0.5);
 
-    public Button decreaseHeight = new Button(this.centerX - 100, this.centerY, 60, 60, "-", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.mouseObstacleHeight -= 0.5;
-        }
-    }
-    );
+    public Button decreaseHeight = new Button(this.centerX - 100, this.centerY, 60, 60, "-", () -> screenLevelEditor.mouseObstacleHeight -= 0.5);
 
-    public Button back = new Button(this.centerX, this.centerY + 300, 350, 40, "Done", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            escape();
-        }
-    }
-    );
+    public Button back = new Button(this.centerX, this.centerY + 300, 350, 40, "Done", this::escape);
 
-    public Button staggering = new Button(this.centerX + 200, this.centerY, 60, 60, "", new Runnable()
+    public Button staggering = new Button(this.centerX + 200, this.centerY, 60, 60, "", () ->
     {
-        @Override
-        public void run()
+        if (!screenLevelEditor.stagger)
         {
-            if (!screenLevelEditor.stagger)
-            {
-                screenLevelEditor.mouseObstacleHeight = Math.max(screenLevelEditor.mouseObstacleHeight, 1);
-                screenLevelEditor.stagger = true;
-            }
-            else if (!screenLevelEditor.oddStagger)
-            {
-                screenLevelEditor.mouseObstacleHeight = Math.max(screenLevelEditor.mouseObstacleHeight, 1);
-                screenLevelEditor.oddStagger = true;
-            }
-            else
-            {
-                screenLevelEditor.oddStagger = false;
-                screenLevelEditor.stagger = false;
-            }
+            screenLevelEditor.mouseObstacleHeight = Math.max(screenLevelEditor.mouseObstacleHeight, 1);
+            screenLevelEditor.stagger = true;
+        }
+        else if (!screenLevelEditor.oddStagger)
+        {
+            screenLevelEditor.mouseObstacleHeight = Math.max(screenLevelEditor.mouseObstacleHeight, 1);
+            screenLevelEditor.oddStagger = true;
+        }
+        else
+        {
+            screenLevelEditor.oddStagger = false;
+            screenLevelEditor.stagger = false;
         }
     }, " --- "
     );
@@ -77,7 +50,7 @@ public class OverlayBlockHeight extends ScreenLevelBuilderOverlay
 
     public void update()
     {
-        this.increaseHeight.enabled = screenLevelEditor.mouseObstacleHeight < 4;
+        this.increaseHeight.enabled = screenLevelEditor.mouseObstacleHeight < Obstacle.default_max_height;
         this.decreaseHeight.enabled = screenLevelEditor.mouseObstacleHeight > 0.5;
 
         if (screenLevelEditor.stagger)
@@ -89,21 +62,18 @@ public class OverlayBlockHeight extends ScreenLevelBuilderOverlay
 
         if (!screenLevelEditor.stagger)
         {
-            this.staggering.image = "nostagger.png";
-            this.staggering.hoverText[0] = "Blocks will all be placed";
-            this.staggering.hoverText[1] = "with the same height";
+            this.staggering.image = "icons/nostagger.png";
+            this.staggering.setHoverText("Blocks will all be placed---with the same height");
         }
         else if (screenLevelEditor.oddStagger)
         {
-            this.staggering.image = "oddstagger.png";
-            this.staggering.hoverText[0] = "Every other block on the grid";
-            this.staggering.hoverText[1] = "will be half a block shorter";
+            this.staggering.image = "icons/oddstagger.png";
+            this.staggering.setHoverText("Every other block on the grid---will be half a block shorter");
         }
         else
         {
-            this.staggering.image = "evenstagger.png";
-            this.staggering.hoverText[0] = "Every other block on the grid";
-            this.staggering.hoverText[1] = "will be half a block shorter";
+            this.staggering.image = "icons/evenstagger.png";
+            this.staggering.setHoverText("Every other block on the grid---will be half a block shorter");
         }
 
         this.back.update();
@@ -116,7 +86,7 @@ public class OverlayBlockHeight extends ScreenLevelBuilderOverlay
         super.draw();
         Drawing.drawing.setColor(screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 2.5, "Block height");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 2.5, "Block height");
 
         Drawing.drawing.setColor(0, 0, 0, 127);
 
@@ -134,6 +104,6 @@ public class OverlayBlockHeight extends ScreenLevelBuilderOverlay
 
         Drawing.drawing.setInterfaceFontSize(12);
         Drawing.drawing.setColor(255, 255, 255);
-        Drawing.drawing.drawInterfaceText(staggering.posX, staggering.posY - 40, "Staggering");
+        Drawing.drawing.displayInterfaceText(staggering.posX, staggering.posY - 40, "Staggering");
     }
 }

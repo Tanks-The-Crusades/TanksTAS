@@ -11,7 +11,7 @@ import tanks.registry.RegistryItem;
 
 import java.util.ArrayList;
 
-public class OverlayEditLevelStartingItems extends ScreenLevelBuilderOverlay implements IItemScreen
+public class OverlayEditLevelStartingItems extends ScreenLevelEditorOverlay implements IItemScreen
 {
     public ButtonList startingItemsList;
     public Selector itemSelector;
@@ -40,14 +40,7 @@ public class OverlayEditLevelStartingItems extends ScreenLevelBuilderOverlay imp
     }
     );
 
-    public Button back = new Button(this.centerX, this.centerY + 300, 350, 40, "Back", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            escape();
-        }
-    }
+    public Button back = new Button(this.centerX, this.centerY + 300, 350, 40, "Back", this::escape
     );
 
     public OverlayEditLevelStartingItems(Screen previous, ScreenLevelEditor screenLevelEditor)
@@ -120,15 +113,15 @@ public class OverlayEditLevelStartingItems extends ScreenLevelBuilderOverlay imp
 
         Drawing.drawing.setColor(screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - 270, "Starting items");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - 270, "Starting items");
         this.startingItemsList.draw();
         this.back.draw();
         this.addItem.draw();
 
         if (this.startingItemsList.reorder)
-            this.reorderItems.text = "Stop reordering";
+            this.reorderItems.setText("Stop reordering");
         else
-            this.reorderItems.text = "Reorder items";
+            this.reorderItems.setText("Reorder items");
 
         this.reorderItems.draw();
     }

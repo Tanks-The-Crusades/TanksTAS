@@ -13,10 +13,10 @@ import java.util.ArrayList;
 
 public abstract class BulletInstant extends Bullet
 {
-	public ArrayList<Double> xTargets = new ArrayList<Double>();
-	public ArrayList<Double> yTargets = new ArrayList<Double>();
+	public ArrayList<Double> xTargets = new ArrayList<>();
+	public ArrayList<Double> yTargets = new ArrayList<>();
 
-	public ArrayList<Laser> segments = new ArrayList<Laser>();
+	public ArrayList<Laser> segments = new ArrayList<>();
 
 	public double lastX;
 	public double lastY;
@@ -156,5 +156,10 @@ public abstract class BulletInstant extends Bullet
 	public void superUpdate()
 	{
 		super.update();
+	}
+
+	public void addTrail(boolean redirect)
+	{
+
 	}
 }

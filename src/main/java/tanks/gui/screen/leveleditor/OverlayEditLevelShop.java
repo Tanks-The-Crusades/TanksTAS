@@ -11,7 +11,7 @@ import tanks.registry.RegistryItem;
 
 import java.util.ArrayList;
 
-public class OverlayEditLevelShop extends ScreenLevelBuilderOverlay implements IItemScreen
+public class OverlayEditLevelShop extends ScreenLevelEditorOverlay implements IItemScreen
 {
     public ButtonList shopList;
     public Selector itemSelector;
@@ -40,14 +40,7 @@ public class OverlayEditLevelShop extends ScreenLevelBuilderOverlay implements I
     }
     );
 
-    public Button back = new Button(this.centerX, this.centerY + 300, 350, 40, "Back", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            escape();
-        }
-    }
+    public Button back = new Button(this.centerX, this.centerY + 300, 350, 40, "Back", this::escape
     );
 
     public OverlayEditLevelShop(Screen previous, ScreenLevelEditor screenLevelEditor)
@@ -120,15 +113,15 @@ public class OverlayEditLevelShop extends ScreenLevelBuilderOverlay implements I
 
         Drawing.drawing.setColor(screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - 270, "Shop items");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - 270, "Shop items");
         this.shopList.draw();
         this.back.draw();
         this.addItem.draw();
 
         if (this.shopList.reorder)
-            this.reorderItems.text = "Stop reordering";
+            this.reorderItems.setText("Stop reordering");
         else
-            this.reorderItems.text = "Reorder items";
+            this.reorderItems.setText("Reorder items");
 
         this.reorderItems.draw();
     }
@@ -138,7 +131,6 @@ public class OverlayEditLevelShop extends ScreenLevelBuilderOverlay implements I
     {
         screenLevelEditor.level.shop.add(i);
 
-        //TODO change on starting items
         ScreenEditItem s = new ScreenEditItem(i, this, false, true);
         s.drawBehindScreen = true;
         Game.screen = s;
@@ -148,7 +140,6 @@ public class OverlayEditLevelShop extends ScreenLevelBuilderOverlay implements I
     public void removeItem(Item i)
     {
         screenLevelEditor.level.shop.remove(i);
-        //TODO same as above
         ScreenLevelEditor.refreshItemButtons(screenLevelEditor.level.shop, this.shopList, false);
     }
 

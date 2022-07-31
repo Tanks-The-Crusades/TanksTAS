@@ -1,5 +1,6 @@
 package tanks.gui;
 
+import basewindow.IModel;
 import basewindow.InputCodes;
 import basewindow.InputPoint;
 import tanks.*;
@@ -7,8 +8,8 @@ import tanks.gui.screen.ScreenGame;
 import tanks.gui.screen.ScreenInfo;
 import tanks.gui.screen.ScreenPartyHost;
 import tanks.gui.screen.ScreenPartyLobby;
+import tanks.translation.Translation;
 
-import java.net.URL;
 import java.util.ArrayList;
 
 public class Button implements IDrawable, ITrigger
@@ -18,12 +19,21 @@ public class Button implements IDrawable, ITrigger
 	public double posY;
 	public double sizeX;
 	public double sizeY;
+
+	public boolean translated = true;
+
+	public String rawText;
 	public String text;
-	public String subtext = null;
+	public String translatedText;
+
+	public String rawSubtext;
+	public String subtext;
+	public String translatedSubtext;
 
 	public boolean enableHover = false;
 	public String[] hoverText;
 	public String hoverTextRaw = "";
+	public String hoverTextRawTranslated = "";
 
 	public boolean selected = false;
 	public boolean infoSelected = false;
@@ -51,11 +61,17 @@ public class Button implements IDrawable, ITrigger
 	public double textOffsetX = 0;
 	public double textOffsetY = 0;
 
+	public double imageR = 255;
+	public double imageG = 255;
+	public double imageB = 255;
+	public boolean drawImageShadow = false;
+
 	public boolean silent = false;
 
 	public boolean fullInfo = false;
 
 	public String image = null;
+	public IModel model = null;
 	public double imageSizeX = 0;
 	public double imageSizeY = 0;
 
@@ -94,21 +110,18 @@ public class Button implements IDrawable, ITrigger
 		this.posY = y;
 		this.sizeX = sX;
 		this.sizeY = sY;
-		this.text = text;
 
-		//if (text.toLowerCase().contains("back") || text.toLowerCase().contains("quit"))
-		//	this.sound = "cancel.ogg";
+		this.setText(text);
 	}
 
-	public Button(double x, double y, double sX, double sY, String text, Runnable f, String hoverText)
+	public Button(double x, double y, double sX, double sY, String text, Runnable f, String hoverText, Object... hoverTextOptions)
 	{
 		this(x, y, sX, sY, text, f);
 
 		if (hoverText != null)
 		{
 			this.enableHover = true;
-			this.hoverText = hoverText.split("---");
-			this.hoverTextRaw = hoverText;
+			this.setHoverText(hoverText, hoverTextOptions);
 		}
 	}
 
@@ -118,20 +131,19 @@ public class Button implements IDrawable, ITrigger
 		this.posY = y;
 		this.sizeX = sX;
 		this.sizeY = sY;
-		this.text = text;
+		this.setText(text);
 
 		this.enabled = false;
 	}
 
-	public Button(double x, double y, double sX, double sY, String text, String hoverText)
+	public Button(double x, double y, double sX, double sY, String text, String hoverText, Object... hoverTextOptions)
 	{
 		this(x, y, sX, sY, text);
 
 		if (hoverText != null)
 		{
 			this.enableHover = true;
-			this.hoverText = hoverText.split("---");
-			this.hoverTextRaw = hoverText;
+			this.setHoverText(hoverText, hoverTextOptions);
 		}
 	}
 
@@ -178,7 +190,12 @@ public class Button implements IDrawable, ITrigger
 		drawing.fillInterfaceOval(posX + sizeX / 2 - sizeY / 2, posY, sizeY, sizeY);
 
 		drawing.setColor(this.textColR, this.textColG, this.textColB);
-		drawing.drawInterfaceText(posX + this.textOffsetX, posY + this.textOffsetY, text);
+
+		String t = this.text;
+		if (this.translated)
+			t = this.translatedText;
+
+		drawing.drawInterfaceText(posX + this.textOffsetX, posY + this.textOffsetY, t);
 
 		if (this.subtext != null)
 		{
@@ -188,8 +205,20 @@ public class Button implements IDrawable, ITrigger
 
 		if (this.image != null)
 		{
-			drawing.setColor(255, 255, 255);
+			if (this.drawImageShadow)
+			{
+				drawing.setColor(127, 127, 127);
+				drawing.drawInterfaceImage(image, this.posX + this.imageXOffset + 1.5, this.posY + this.imageYOffset + 1.5, this.imageSizeX, this.imageSizeY);
+			}
+
+			drawing.setColor(this.imageR, this.imageG, this.imageB);
 			drawing.drawInterfaceImage(image, this.posX + this.imageXOffset, this.posY + this.imageYOffset, this.imageSizeX, this.imageSizeY);
+		}
+
+		if (this.model != null)
+		{
+			Drawing.drawing.setColor(127, 180, 255);
+			drawing.drawInterfaceModel2D(model, this.posX + this.imageXOffset, this.posY + this.imageYOffset, 0,this.imageSizeX * 0.75, this.imageSizeY * 0.75, this.imageSizeY * 0.75);
 		}
 
 		if (enableHover)
@@ -323,9 +352,9 @@ public class Button implements IDrawable, ITrigger
 				Drawing.drawing.playVibration("click");
 
 				if (Game.screen instanceof ScreenGame && (ScreenPartyHost.isServer || ScreenPartyLobby.isClient))
-					((ScreenGame) Game.screen).overlay = new ScreenInfo(null, this.text, this.hoverText);
+					((ScreenGame) Game.screen).overlay = new ScreenInfo(null, this.translatedText, this.hoverText);
 				else
-					Game.screen = new ScreenInfo(Game.screen, this.text, this.hoverText);
+					Game.screen = new ScreenInfo(Game.screen, this.translatedText, this.hoverText);
 			}
 			else if (enabled)
 			{
@@ -336,7 +365,6 @@ public class Button implements IDrawable, ITrigger
 				if (!this.silent)
 				{
 					Drawing.drawing.playSound("bullet_explode.ogg", 2f, 0.3f);
-					//Drawing.drawing.playSound(this.sound, 1f, 1f);
 					Drawing.drawing.playVibration("click");
 				}
 
@@ -355,7 +383,7 @@ public class Button implements IDrawable, ITrigger
 
 	public static void drawGlow(double posX, double posY, double sizeX, double sizeY, double size, double r, double g, double b, double a, boolean glow)
 	{
-		Game.game.window.setBatchMode(true, true, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(true, true, false, glow);
 
 		Drawing drawing = Drawing.drawing;
 		drawing.setColor(0, 0, 0, 0);
@@ -372,8 +400,8 @@ public class Button implements IDrawable, ITrigger
 		drawing.addInterfaceVertex(posX + sizeX / 2 - sizeY / 2, posY, 0);
 		drawing.addInterfaceVertex(posX - sizeX / 2 + sizeY / 2, posY, 0);
 
-		Game.game.window.setBatchMode(false, true, false, glow);
-		Game.game.window.setBatchMode(true, false, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(false, true, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(true, false, false, glow);
 
 		for (int i = 0; i < 30; i++)
 		{
@@ -391,7 +419,7 @@ public class Button implements IDrawable, ITrigger
 		}
 
 
-		Game.game.window.setBatchMode(false, false, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(false, false, false, glow);
 
 	}
 
@@ -450,5 +478,59 @@ public class Button implements IDrawable, ITrigger
 		e.vY /= 2;
 		e.maxAge *= max;
 		glowEffects.add(e);
+	}
+
+	public void setText(String text)
+	{
+		this.rawText = text;
+		this.text = text;
+		this.translatedText = Translation.translate(text);
+	}
+
+	public void setText(String text, String text2)
+	{
+		this.rawText = text + text2;
+		this.text = text + text2;
+		this.translatedText = Translation.translate(text) + Translation.translate(text2);
+	}
+
+	public void setText(String text, Object... objects)
+	{
+		this.rawText = text;
+		this.text = String.format(text, objects);
+		this.translatedText = Translation.translate(text, objects);
+	}
+
+	public void setTextArgs(Object... objects)
+	{
+		this.text = String.format(this.rawText, objects);
+		this.translatedText = Translation.translate(this.rawText, objects);
+	}
+
+	public void setSubtext(String text)
+	{
+		this.rawSubtext = text;
+		this.subtext = text;
+		this.translatedSubtext = Translation.translate(text);
+	}
+
+	public void setSubtext(String text, Object... objects)
+	{
+		this.rawSubtext = text;
+		this.subtext = String.format(text, objects);
+		this.translatedSubtext = Translation.translate(text, objects);
+	}
+
+	public void setSubtextArgs(Object... objects)
+	{
+		this.subtext = String.format(this.rawSubtext, objects);
+		this.translatedSubtext = Translation.translate(this.rawSubtext, objects);
+	}
+
+	public void setHoverText(String hoverText, Object... objects)
+	{
+		this.hoverTextRaw = hoverText;
+		this.hoverTextRawTranslated = Translation.translate(hoverText, objects);
+		this.hoverText = this.hoverTextRawTranslated.split("---");
 	}
 }

@@ -16,25 +16,9 @@ public class ScreenCrashed extends Screen
 			sadFace = ":)";
 	}
 
-	Button exit = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 100, this.objWidth, this.objHeight, "Exit the game", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			System.exit(0);
-		}
-	}
-	);
+	Button exit = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 100, this.objWidth, this.objHeight, "Exit the game", () -> System.exit(0));
 
-	Button quit = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 160, this.objWidth, this.objHeight, "Return to title", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			Game.exitToTitle();
-		}
-	}
-	);
+	Button quit = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 160, this.objWidth, this.objHeight, "Return to title", Game::exitToTitle);
 
 	@Override
 	public void update()
@@ -59,20 +43,20 @@ public class ScreenCrashed extends Screen
 			drawing.drawInterfaceText(100, 100, sadFace);
 
 		drawing.setInterfaceFontSize(48);
-		drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, 100, "Oh noes! Tanks ran into a problem!");
+		drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, 100, "Oh noes! Tanks ran into a problem!");
 
 		drawing.setInterfaceFontSize(24);
 
-		drawing.drawInterfaceText(50, 200, "You may return to the game if you wish,", false);
-		drawing.drawInterfaceText(50, 230, "but be warned that things may become unstable.", false);
-		drawing.drawInterfaceText(50, 260, "If you see this screen again, restart the game.", false);
-		drawing.drawInterfaceText(50, 290, "Also, you may want to report this crash!", false);
+		drawing.displayInterfaceText(50, 200, false, "You may return to the game if you wish,");
+		drawing.displayInterfaceText(50, 230, false, "but be warned that things may become unstable.");
+		drawing.displayInterfaceText(50, 260, false, "If you see this screen again, restart the game.");
+		drawing.displayInterfaceText(50, 290, false, "Also, you may want to report this crash!");
 
-		drawing.drawInterfaceText(50, 350, "Crash details:", false);
+		drawing.displayInterfaceText(50, 350,  false, "Crash details:");
 		drawing.drawInterfaceText(50, 380, Game.crashMessage, false);
 		drawing.drawInterfaceText(50, 410, Game.crashLine, false);
 
-		drawing.drawInterfaceText(50, 470, "Check the crash report file for more information: ", false);
+		drawing.displayInterfaceText(50, 470,  false, "Check the crash report file for more information: ");
 		drawing.drawInterfaceText(50, 500, Game.homedir.replace("\\", "/") + Game.crashesPath + Game.crashTime + ".crash", false);
 
 		this.quit.draw();

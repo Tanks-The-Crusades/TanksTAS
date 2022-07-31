@@ -1,6 +1,9 @@
 package tanks.obstacle;
 
 import tanks.Drawing;
+import tanks.Game;
+import tanks.gui.screen.ScreenCrusadeDetails;
+import tanks.gui.screen.ScreenCrusadeStats;
 
 public class ObstacleUnknown extends Obstacle
 {
@@ -17,8 +20,9 @@ public class ObstacleUnknown extends Obstacle
 		this.destructible = false;
 		this.tankCollision = false;
 		this.bulletCollision = false;
+		this.batchDraw = false;
 		this.enableStacking = false;
-		this.enableStacking = false;
+
 
 		this.description = "A block which could not be identified";
 	}
@@ -28,7 +32,10 @@ public class ObstacleUnknown extends Obstacle
 	{
 		Drawing.drawing.setColor(this.colorR, this.colorG, this.colorB);
 		Drawing.drawing.setFontSize(12);
-		Drawing.drawing.drawText(this.posX, this.posY, this.name);
+
+		if (!(Game.screen instanceof ScreenCrusadeDetails || Game.screen instanceof ScreenCrusadeStats))
+			Drawing.drawing.drawText(this.posX, this.posY, this.name);
+
 		Drawing.drawing.setColor(this.colorR, this.colorG, this.colorB, 64);
 		Drawing.drawing.fillRect(this.posX, this.posY, draw_size, draw_size);
 	}

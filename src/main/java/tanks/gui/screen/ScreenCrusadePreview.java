@@ -84,7 +84,7 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
             {
                 download.enabled = false;
                 downloaded = true;
-                download.text = "Crusade downloaded!";
+                download.setText("Crusade downloaded!");
             }
         }
     });
@@ -99,32 +99,11 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
     }
     );
 
-    public Button options = new Button(this.centerX - this.objXSpace, 60, this.objWidth, this.objHeight, "Overview", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            mode = Mode.options;
-        }
-    });
+    public Button options = new Button(this.centerX - this.objXSpace, 60, this.objWidth, this.objHeight, "Overview", () -> mode = Mode.options);
 
-    public Button levels = new Button(this.centerX, 60, this.objWidth, this.objHeight, "Levels", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            mode = Mode.levels;
-        }
-    });
+    public Button levels = new Button(this.centerX, 60, this.objWidth, this.objHeight, "Levels", () -> mode = Mode.levels);
 
-    public Button items = new Button(this.centerX + this.objXSpace, 60, this.objWidth, this.objHeight, "Shop", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            mode = Mode.items;
-        }
-    });
+    public Button items = new Button(this.centerX + this.objXSpace, 60, this.objWidth, this.objHeight, "Shop", () -> mode = Mode.items);
 
     public ScreenCrusadePreview(Crusade c, Screen previous, boolean upload)
     {
@@ -167,20 +146,16 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
 
         this.levelButtons.indexPrefix = true;
 
-        crusadeName = new TextBox(this.centerX, this.centerY + this.objYSpace * 3, this.objWidth, this.objHeight, "Crusade save name", new Runnable()
+        crusadeName = new TextBox(this.centerX, this.centerY + this.objYSpace * 3, this.objWidth, this.objHeight, "Crusade save name", () ->
         {
-            @Override
-            public void run()
-            {
-                if (crusadeName.inputText.equals(""))
-                    crusadeName.inputText = crusadeName.previousInputText;
-                updateDownloadButton();
-            }
-
+            if (crusadeName.inputText.equals(""))
+                crusadeName.inputText = crusadeName.previousInputText;
+            updateDownloadButton();
         }
                 , crusade.name.replace("_", " "));
 
         crusadeName.enableCaps = true;
+        crusadeName.maxChars = 18;
 
         this.updateDownloadButton();
     }
@@ -192,17 +167,13 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
         for (int i = 0; i < this.crusade.levels.size(); i++)
         {
             int j = i;
-            this.levelButtons.buttons.add(new Button(0, 0, this.objWidth, this.objHeight, this.crusade.levelNames.get(i).replace("_", " "), new Runnable()
+            this.levelButtons.buttons.add(new Button(0, 0, this.objWidth, this.objHeight, this.crusade.levels.get(i).levelName.replace("_", " "), () ->
             {
-                @Override
-                public void run()
-                {
-                    String level = crusade.levels.get(j);
+                String level = crusade.levels.get(j).levelString;
 
-                    ScreenCrusadePreviewLevel s = new ScreenCrusadePreviewLevel(crusade, level, j, Game.screen);
-                    new Level(level).loadLevel(s);
-                    Game.screen = s;
-                }
+                ScreenCrusadePreviewLevel s = new ScreenCrusadePreviewLevel(crusade, level, j, Game.screen);
+                new Level(level).loadLevel(s);
+                Game.screen = s;
             }));
         }
 
@@ -223,15 +194,13 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
             b.imageSizeY = b.sizeY;
 
             int p = crusade.crusadeItems.get(i).price;
-            String price = p + " ";
-            if (p == 0)
-                price = "Free!";
-            else if (p == 1)
-                price += "coin";
-            else
-                price += "coins";
 
-            b.subtext = price;
+            if (p == 0)
+                b.setSubtext("Free!");
+            else if (p == 1)
+                b.setSubtext("1 coin");
+            else
+                b.setSubtext("%d coins", p);
 
             this.itemButtons.buttons.add(b);
         }
@@ -300,22 +269,22 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
 
             Drawing.drawing.setInterfaceFontSize(this.titleSize);
             Drawing.drawing.setColor(0, 0, 0);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + titleOffset, "Crusade levels");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + titleOffset, "Crusade levels");
         }
         else if (mode == Mode.options)
         {
             Drawing.drawing.setInterfaceFontSize(this.textSize * 2);
             Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 1.5, crusade.name.replace("_", " "));
             Drawing.drawing.setInterfaceFontSize(this.textSize);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 0.5, "Levels: " + crusade.levels.size());
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + this.objYSpace * 0.5, "Starting lives: " + crusade.startingLives);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + this.objYSpace * 1, "Bonus life frequency: " + crusade.bonusLifeFrequency);
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 0.5, "Levels: %d", crusade.levels.size());
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + this.objYSpace * 0.5, "Starting lives: %d", crusade.startingLives);
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + this.objYSpace * 1, "Bonus life frequency: %d", crusade.bonusLifeFrequency);
 
             quit.draw();
 
             Drawing.drawing.setInterfaceFontSize(this.titleSize);
             Drawing.drawing.setColor(0, 0, 0);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + titleOffset, "Crusade details");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + titleOffset, "Crusade details");
 
             if (uploadMode)
             {
@@ -334,7 +303,7 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
 
             Drawing.drawing.setInterfaceFontSize(this.titleSize);
             Drawing.drawing.setColor(0, 0, 0);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + titleOffset, "Crusade items");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + titleOffset, "Crusade items");
         }
     }
 
@@ -364,12 +333,12 @@ public class ScreenCrusadePreview extends Screen implements IItemScreen
 
         if (file.exists())
         {
-            download.text = "Pick a different name...";
+            download.setText("Pick a different name...");
             download.enabled = false;
         }
         else
         {
-            download.text = "Download";
+            download.setText("Download");
             download.enabled = true;
         }
     }

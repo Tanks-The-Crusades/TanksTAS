@@ -39,6 +39,8 @@ public class ScreenExit extends Screen
     @Override
     public void draw()
     {
+        Drawing.drawing.forceRedrawTerrain();
+
         if (System.currentTimeMillis() - startTime < outroTime + outroAnimationTime)
         {
             double frac = ((System.currentTimeMillis() - startTime) / outroAnimationTime);
@@ -49,7 +51,7 @@ public class ScreenExit extends Screen
 
             Drawing.drawing.setInterfaceFontSize(48);
             Drawing.drawing.setColor(255, 255, 255, 255 * Math.max(0, Math.min(1 - ((System.currentTimeMillis() - startTime - outroAnimationTime) / outroTime), 1)));
-            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2, "\"Tanks\" for playing!");
+            Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2, "\"Tanks\" for playing!");
 
             if (System.currentTimeMillis() - startTime <= outroAnimationTime)
             {

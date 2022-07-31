@@ -26,7 +26,7 @@ public class ScreenCrusadeEditWarning extends Screen
         public void run()
         {
             Game.game.fileManager.getFile(Game.homedir + Game.savedCrusadePath + crusade.name).delete();
-            Game.screen = new ScreenCrusadeBuilder(crusade);
+            Game.screen = new ScreenCrusadeEditor(crusade);
         }
     }
     );
@@ -54,8 +54,8 @@ public class ScreenCrusadeEditWarning extends Screen
 
         Drawing.drawing.setColor(0, 0, 0);
         Drawing.drawing.setInterfaceFontSize(this.textSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, "Are you sure you want to edit the crusade?");
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 4 / 3, "Editing the crusade will reset progress.");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, "Are you sure you want to edit the crusade?");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 4 / 3, "Editing the crusade will reset progress.");
 
         confirm.draw();
         back.draw();

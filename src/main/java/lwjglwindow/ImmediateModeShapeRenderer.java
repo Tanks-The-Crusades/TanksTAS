@@ -1,6 +1,7 @@
 package lwjglwindow;
 
 import basewindow.BaseShapeRenderer;
+import basewindow.IBatchRenderableObject;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
@@ -21,7 +22,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY) / 4 + 5;
+        int sides = Math.max(4, (int) (sX + sY) / 4 + 5);
 
         glBegin(GL_TRIANGLE_FAN);
         for (double i = 0; i < Math.PI * 2; i += Math.PI * 2 / sides)
@@ -45,7 +46,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY) / 16 + 5;
+        int sides = Math.max(4, (int) (sX + sY) / 16 + 5);
 
         if (!shade)
             this.window.setGlowBlendFunc();
@@ -101,7 +102,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY + Math.max(z / 20, 0)) / 4 + 5;
+        int sides = Math.max(4, (int) (sX + sY + Math.max(z / 20, 0)) / 4 + 5);
 
         glBegin(GL_TRIANGLE_FAN);
         for (double i = 0; i < Math.PI * 2; i += Math.PI * 2 / sides)
@@ -124,7 +125,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY) / 4 + 5;
+        int sides = Math.max(4, (int) (sX + sY) / 4 + 5);
 
         glBegin(GL_TRIANGLES);
         for (double i = start; i < end; i += (end - start) / sides)
@@ -156,7 +157,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY + Math.max(z / 20, 0)) / 16 + 5;
+        int sides = Math.max(4, (int) (sX + sY + Math.max(z / 20, 0)) / 16 + 5);
 
         if (!shade)
             this.window.setGlowBlendFunc();
@@ -217,7 +218,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY + Math.max(z / 20, 0)) / 4 + 5;
+        int sides = Math.max(4, (int) (sX + sY + Math.max(z / 20, 0)) / 4 + 5);
 
         glBegin(GL_TRIANGLE_FAN);
         for (double i = 0; i < Math.PI * 2; i += Math.PI * 2 / sides)
@@ -273,7 +274,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY + Math.max(z / 20, 0)) / 16 + 5;
+        int sides = Math.max(4, (int) (sX + sY + Math.max(z / 20, 0)) / 16 + 5);
 
         if (!shade)
             this.window.setGlowBlendFunc();
@@ -326,7 +327,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY) / 4 + 5;
+        int sides = Math.max(4, (int) (sX + sY) / 4 + 5);
 
         for (double i = 0; i < Math.PI * 2; i += Math.PI * 2 / sides)
         {
@@ -342,7 +343,7 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
         x += sX / 2;
         y += sY / 2;
 
-        int sides = (int) (sX + sY + Math.max(z / 20, 0)) / 4 + 5;
+        int sides = Math.max(4, (int) (sX + sY + Math.max(z / 20, 0)) / 4 + 5);
 
         for (double i = 0; i < Math.PI * 2; i += Math.PI * 2 / sides)
         {
@@ -811,13 +812,63 @@ public class ImmediateModeShapeRenderer extends BaseShapeRenderer
             this.window.disableDepthtest();
     }
 
-    public double rotateX(double px, double py, double posX, double rotation)
+    @Override
+    public void setBatchMode(boolean enabled, boolean quads, boolean depth)
     {
-        return (px * Math.cos(rotation) - py * Math.sin(rotation)) + posX;
+        this.setBatchMode(enabled, quads, depth, false);
+    }
+
+    @Override
+    public void setBatchMode(boolean enabled, boolean quads, boolean depth, boolean glow)
+    {
+        this.setBatchMode(enabled, quads, depth, glow, !(this.window.colorA < 1 || glow));
+    }
+
+    @Override
+    public void setBatchMode(boolean enabled, boolean quads, boolean depth, boolean glow, boolean depthMask)
+    {
+        this.window.batchMode = enabled;
+        this.window.batchQuads = quads;
+        this.window.batchDepth = depth;
+        this.window.batchGlow = glow;
+        this.window.batchDepthMask = depthMask;
+
+        if (enabled)
+        {
+            glDepthMask(depthMask);
+
+            if (depth)
+            {
+                window.enableDepthtest();
+                glDepthFunc(GL_LEQUAL);
+            }
+
+            if (glow)
+                window.setGlowBlendFunc();
+            else
+                window.setTransparentBlendFunc();
+
+            if (quads)
+                glBegin(GL_QUADS);
+            else
+                glBegin(GL_TRIANGLES);
+        }
+        else
+        {
+            GL11.glEnd();
+            window.disableDepthtest();
+            glDepthMask(true);
+            window.setTransparentBlendFunc();
+        }
     }
 
     public double rotateY(double px, double py, double posY, double rotation)
     {
-        return (py * Math.cos(rotation) + px * Math.sin(rotation)) + posY;
+        return (px * Math.cos(rotation) + py * Math.sin(rotation)) + posY;
+    }
+
+    public double rotateX(double px, double py, double posX, double rotation)
+    {
+        return (py * Math.cos(rotation) - px * Math.sin(rotation)) + posX;
     }
 }

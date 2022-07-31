@@ -1,23 +1,24 @@
 package tanks;
 import basewindow.BaseFile;
 import tanks.event.*;
+import tanks.gui.screen.ScreenCrusadeLevels;
 import tanks.gui.screen.ScreenGame;
 import tanks.gui.screen.ScreenPartyHost;
 import tanks.hotbar.ItemBar;
 import tanks.hotbar.item.Item;
+import tanks.tank.Tank;
+import tanks.tank.TankAIControlled;
 import tanks.tank.TankPlayer;
 import tanks.tank.TankPlayerRemote;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 public class Crusade 
 {
 	public static Crusade currentCrusade = null;
 	public static boolean crusadeMode = false;
 
+	public boolean retry = false;
 	public boolean replay = false;
 
 	public boolean win = false;
@@ -30,14 +31,29 @@ public class Crusade
 
 	public double timePassed = 0;
 
-	public ArrayList<String> levels = new ArrayList<String>();
-	public ArrayList<String> levelNames = new ArrayList<String>();
+	public static class CrusadeLevel
+	{
+		public String levelName;
+		public String levelString;
+		public ArrayList<TankAIControlled> tanks;
+
+		public CrusadeLevel(String name, String lvl)
+		{
+			this.levelName = name;
+			this.levelString = lvl;
+			this.tanks = new ArrayList<>();
+		}
+	}
+
+	public ArrayList<CrusadeLevel> levels = new ArrayList<>();
+	public HashSet<Integer> livingTankIDs = new HashSet<>();
 
 	public int bonusLifeFrequency = 3;
 	public int startingLives = 3;
 	public boolean showNames = false;
 
-	public ArrayList<Item> crusadeItems = new ArrayList<Item>();
+	public ArrayList<TankAIControlled> customTanks = new ArrayList<>();
+	public ArrayList<Item> crusadeItems = new ArrayList<>();
 
 	public String name = "";
 	public String fileName = "";
@@ -55,6 +71,8 @@ public class Crusade
 	public Exception error = null;
 
 	public ArrayList<LevelPerformance> performances = new ArrayList<>();
+
+	public boolean respawnTanks = true;
 
 	public Crusade(ArrayList<String> levelArray, String name, String file)
 	{
@@ -81,7 +99,7 @@ public class Crusade
 		{
 			this.fileName = f.path;
 			f.startReading();
-			ArrayList<String> list = new ArrayList<String>();
+			ArrayList<String> list = new ArrayList<>();
 
 			StringBuilder c = new StringBuilder();
 
@@ -112,7 +130,9 @@ public class Crusade
 		int parsing = -1;
 		
 		int i = 0;
-		
+
+		HashMap<TankAIControlled, String> tankOccurrences = new HashMap<>();
+
 		while (i < levelArray.size())
 		{
 			String s = levelArray.get(i);
@@ -127,15 +147,21 @@ public class Crusade
 				case "properties":
 					parsing = 2;
 					break;
+				case "tanks":
+					parsing = 3;
+					break;
 				default:
 					if (parsing == 0)
 					{
-						this.levels.add(levelArray.get(i));
+						String lvl = levelArray.get(i);
+						String lvlName;
 
 						if (levelArray.get(i).contains("name="))
-							this.levelNames.add(levelArray.get(i).substring(levelArray.get(i).indexOf("name=") + 5));
+							lvlName = (levelArray.get(i).substring(levelArray.get(i).indexOf("name=") + 5));
 						else
-							this.levelNames.add("Battle " + (levelNames.size() + 1));
+							lvlName = ("Battle " + (levels.size() + 1));
+
+						this.levels.add(new CrusadeLevel(lvlName, lvl));
 					}
 					else if (parsing == 1)
 					{
@@ -150,6 +176,18 @@ public class Crusade
 
 						if (z.length > 2)
 							this.showNames = Boolean.parseBoolean(z[2]);
+
+						if (z.length > 3)
+							this.respawnTanks = Boolean.parseBoolean(z[3]);
+					}
+					else if (parsing == 3)
+					{
+						int divider = s.indexOf("]") + 1;
+						String first = s.substring(0, divider);
+						String second = s.substring(divider);
+						TankAIControlled t = TankAIControlled.fromString(second);
+						tankOccurrences.put(t, first);
+						this.customTanks.add(t);
 					}
 					break;
 			}
@@ -159,8 +197,15 @@ public class Crusade
 		
 		this.name = name;
 
-		//if (this.levels.size() <= 0)
-		//	Game.exitToCrash(new RuntimeException("The crusade " + name + " has no levels!"));
+		for (TankAIControlled t: tankOccurrences.keySet())
+		{
+			String s = tankOccurrences.get(t);
+			String[] lvls = s.substring(1, s.length() - 1).split(", ");
+			for (String l: lvls)
+			{
+				this.levels.get(Integer.parseInt(l)).tanks.add(t);
+			}
+		}
 
 		for (int j = 0; j < Game.players.size(); j++)
 		{
@@ -180,6 +225,9 @@ public class Crusade
 		currentLevel = 0;
 		saveLevel = 0;
 
+		disconnectedPlayers.clear();
+		livingTankIDs.clear();
+
 		Game.eventsOut.add(new EventBeginCrusade());
 
 		this.timePassed = 0;
@@ -193,7 +241,8 @@ public class Crusade
 
 	public void loadLevel()
 	{
-		Level l = new Level(this.levels.get(this.currentLevel));
+		Level l = new Level(this.levels.get(this.currentLevel).levelString);
+		l.customTanks = this.customTanks;
 
 		Game.player.hotbar.enabledItemBar = true;
 		Game.player.hotbar.enabledCoins = true;
@@ -210,7 +259,14 @@ public class Crusade
 					{
 						player.remainingLives = cp.player.remainingLives;
 						cp.player = player;
+						cp.itemBar.player = player;
 						crusadePlayers.put(player, cp);
+
+						for (Item i: cp.itemBar.slots)
+						{
+							i.player = player;
+						}
+
 						found = true;
 						break;
 					}
@@ -255,9 +311,9 @@ public class Crusade
 		String sub = "";
 
 		if (Crusade.currentCrusade.showNames)
-			sub = Crusade.currentCrusade.levelNames.get(Crusade.currentCrusade.currentLevel).replace("_", " ");
+			sub = Crusade.currentCrusade.levels.get(Crusade.currentCrusade.currentLevel).levelName.replace("_", " ");
 
-		Game.eventsOut.add(new EventLoadCrusadeHotbar("Battle " + (this.currentLevel + 1), sub));
+		Game.eventsOut.add(new EventLoadCrusadeHotbar("Battle %d", sub, (this.currentLevel + 1), true));
 	}
 	
 	public void levelFinished(boolean win)
@@ -304,7 +360,20 @@ public class Crusade
 		try
 		{
 			if (!ScreenPartyHost.isServer)
-				this.crusadePlayers.get(Game.player).saveCrusade(win);
+				this.crusadePlayers.get(Game.player).saveCrusade();
+			else
+			{
+				if (Game.screen instanceof ScreenGame && !((ScreenGame) Game.screen).savedRemainingTanks)
+				{
+					Crusade.currentCrusade.livingTankIDs.clear();
+
+					for (Movable m : Game.movables)
+					{
+						if (m instanceof Tank && !m.destroy && ((Tank) m).crusadeID >= 0)
+							Crusade.currentCrusade.livingTankIDs.add(((Tank) m).crusadeID);
+					}
+				}
+			}
 		}
 		catch (Exception e)
 		{
@@ -342,7 +411,7 @@ public class Crusade
 
 	public ArrayList<Item> getShop() 
 	{
-		ArrayList<Item> shop = new ArrayList<Item>();
+		ArrayList<Item> shop = new ArrayList<>();
 		
 		for (int i = 0; i < this.crusadeItems.size(); i++)
 		{
@@ -424,5 +493,34 @@ public class Crusade
 			performances.add(new LevelPerformance(currentLevel));
 
 		performances.get(currentLevel).recordAttempt(time, win);
+	}
+
+	public void quit()
+	{
+		boolean win = ScreenGame.finishedQuick && Panel.win;
+
+		if (!win)
+		{
+			for (int i = 0; i < Game.movables.size(); i++)
+			{
+				if (Game.movables.get(i) instanceof TankPlayer && !Game.movables.get(i).destroy)
+					((TankPlayer) Game.movables.get(i)).player.remainingLives--;
+				else if (Game.movables.get(i) instanceof TankPlayerRemote && !Game.movables.get(i).destroy)
+					((TankPlayerRemote) Game.movables.get(i)).player.remainingLives--;
+			}
+		}
+
+		this.saveHotbars();
+		this.levelFinished(win);
+
+		if (saveLevel > currentLevel)
+			this.retry = false;
+
+		this.currentLevel = saveLevel;
+
+		Crusade.crusadeMode = false;
+
+		if (!ScreenPartyHost.isServer)
+			Crusade.currentCrusade = null;
 	}
 }

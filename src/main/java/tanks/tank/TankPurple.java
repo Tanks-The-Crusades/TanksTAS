@@ -2,6 +2,9 @@ package tanks.tank;
 
 import tanks.Game;
 
+/**
+ * A smart, fast tank which can lay mines
+ */
 public class TankPurple extends TankAIControlled
 {
 	public TankPurple(String name, double x, double y, double angle)
@@ -14,6 +17,6 @@ public class TankPurple extends TankAIControlled
 
 		this.coinValue = 10;
 
-		this.description = "A smart, fast tank---which can lay mines";
+		this.description = "A smart, fast tank which can lay mines";
 	}
 }

@@ -1,20 +1,16 @@
 package tanks;
 
-import tanks.event.EventCreatePlayer;
-import tanks.event.EventEnterLevel;
-import tanks.event.EventLoadLevel;
+import tanks.event.*;
 import tanks.gui.screen.*;
 import tanks.gui.screen.leveleditor.ScreenLevelEditor;
-import tanks.gui.screen.leveleditor.ScreenLevelBuilderOverlay;
+import tanks.gui.screen.leveleditor.ScreenLevelEditorOverlay;
 import tanks.hotbar.item.Item;
 import tanks.obstacle.Obstacle;
-import tanks.tank.Tank;
-import tanks.tank.TankPlayer;
-import tanks.tank.TankRemote;
-import tanks.tank.TankSpawnMarker;
+import tanks.tank.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 public class Level 
@@ -34,8 +30,14 @@ public class Level
 	public static double currentColorG = 207;
 	public static double currentColorB = 166;
 
+	public static double currentColorVarR = 235;
+	public static double currentColorVarG = 207;
+	public static double currentColorVarB = 166;
+
 	public static double currentLightIntensity = 1;
 	public static double currentShadowIntensity = 0.5;
+
+	public static int currentCloudCount = 0;
 
 	public static Random random = new Random();
 
@@ -60,22 +62,23 @@ public class Level
 	public double light = 1.0;
 	public double shadow = 0.5;
 
-	public HashMap<String, Team> teamsMap = new HashMap<String, Team>();
+	public HashMap<String, Team> teamsMap = new HashMap<>();
 
-	public ArrayList<Team> teamsList = new ArrayList<Team>();
+	public ArrayList<Team> teamsList = new ArrayList<>();
 
-	public ArrayList<Integer> availablePlayerSpawns = new ArrayList<Integer>();
+	public ArrayList<Integer> availablePlayerSpawns = new ArrayList<>();
 
-	public ArrayList<Double> playerSpawnsX = new ArrayList<Double>();
-	public ArrayList<Double> playerSpawnsY = new ArrayList<Double>();
-	public ArrayList<Double> playerSpawnsAngle = new ArrayList<Double>();
-	public ArrayList<Team> playerSpawnsTeam = new ArrayList<Team>();
+	public ArrayList<Double> playerSpawnsX = new ArrayList<>();
+	public ArrayList<Double> playerSpawnsY = new ArrayList<>();
+	public ArrayList<Double> playerSpawnsAngle = new ArrayList<>();
+	public ArrayList<Team> playerSpawnsTeam = new ArrayList<>();
 
-	public ArrayList<Player> includedPlayers = new ArrayList<Player>();
+	public ArrayList<Player> includedPlayers = new ArrayList<>();
 
 	public int startingCoins;
-	public ArrayList<Item> shop = new ArrayList<Item>();
-	public ArrayList<Item> startingItems = new ArrayList<Item>();
+	public ArrayList<Item> shop = new ArrayList<>();
+	public ArrayList<Item> startingItems = new ArrayList<>();
+	public ArrayList<TankAIControlled> customTanks = new ArrayList<>();
 
 	public double startTime = 400;
 	public boolean disableFriendlyFire = false;
@@ -96,7 +99,9 @@ public class Level
 
 		int parsing = 0;
 
-		for (String s: this.levelString.split("\n"))
+		String[] lines = this.levelString.split("\n");
+
+		for (String s: lines)
 		{
 			switch (s.toLowerCase())
 			{
@@ -111,6 +116,9 @@ public class Level
 					break;
 				case "coins":
 					parsing = 3;
+					break;
+				case "tanks":
+					parsing = 4;
 					break;
 				default:
 					if (parsing == 0)
@@ -132,6 +140,11 @@ public class Level
 							screen[0] = screen[0].substring(1);
 						}
 					}
+					else if (parsing == 4)
+					{
+						TankAIControlled t = TankAIControlled.fromString(s);
+						this.customTanks.add(t);
+					}
 					else if (!ScreenPartyLobby.isClient)
 					{
 						if (parsing == 1)
@@ -141,13 +154,29 @@ public class Level
 						else if (parsing == 3)
 							this.startingCoins = Integer.parseInt(s);
 					}
-
 					break;
 			}
 		}
 
 		if (ScreenPartyHost.isServer && Game.disablePartyFriendlyFire)
 			this.disableFriendlyFire = true;
+
+		sizeX = Integer.parseInt(screen[0]);
+		sizeY = Integer.parseInt(screen[1]);
+
+		if (screen.length >= 5)
+		{
+			colorR = Integer.parseInt(screen[2]);
+			colorG = Integer.parseInt(screen[3]);
+			colorB = Integer.parseInt(screen[4]);
+
+			if (screen.length >= 8)
+			{
+				colorVarR = Math.min(255 - colorR, Integer.parseInt(screen[5]));
+				colorVarG = Math.min(255 - colorG, Integer.parseInt(screen[6]));
+				colorVarB = Math.min(255 - colorB, Integer.parseInt(screen[7]));
+			}
+		}
 	}
 
 	public void loadLevel()
@@ -167,6 +196,8 @@ public class Level
 
 	public void loadLevel(ILevelPreviewScreen sc, boolean remote)
 	{
+		int currentCrusadeID = 0;
+
 		if (Game.deterministicMode)
 			random = new Random(Game.seed);
 		else
@@ -187,7 +218,13 @@ public class Level
 		if (!remote && sc == null || (sc instanceof ScreenLevelEditor))
 			Game.eventsOut.add(new EventLoadLevel(this));
 
-		ArrayList<EventCreatePlayer> playerEvents = new ArrayList<EventCreatePlayer>();
+		LinkedHashMap<String, TankAIControlled> customTanksMap = new LinkedHashMap();
+		for (TankAIControlled t: this.customTanks)
+		{
+			customTanksMap.put(t.name, t);
+		}
+
+		ArrayList<EventCreatePlayer> playerEvents = new ArrayList<>();
 
 		Tank.currentID = 0;
 		Tank.freeIDs.clear();
@@ -237,22 +274,7 @@ public class Level
 			}
 		}
 
-		sizeX = Integer.parseInt(screen[0]);
-		sizeY = Integer.parseInt(screen[1]);
-
-		if (screen.length >= 5)
-		{
-			colorR = Integer.parseInt(screen[2]);
-			colorG = Integer.parseInt(screen[3]);
-			colorB = Integer.parseInt(screen[4]);
-
-			if (screen.length >= 8)
-			{
-				colorVarR = Math.min(255 - colorR, Integer.parseInt(screen[5]));
-				colorVarG = Math.min(255 - colorG, Integer.parseInt(screen[6]));
-				colorVarB = Math.min(255 - colorB, Integer.parseInt(screen[7]));
-			}
-		}
+		currentCloudCount = (int)(Math.random() * (double)this.sizeX / 10.0D + Math.random() * (double)this.sizeY / 10.0D);
 
 		if (screen.length >= 9)
 		{
@@ -351,6 +373,7 @@ public class Level
 		}
 
 		Game.game.solidGrid = new boolean[Game.currentSizeX][Game.currentSizeY];
+		Game.game.unbreakableGrid = new boolean[Game.currentSizeX][Game.currentSizeY];
 		boolean[][] solidGrid = new boolean[Game.currentSizeX][Game.currentSizeY];
 
 		for (Obstacle o: Game.obstacles)
@@ -359,7 +382,12 @@ public class Level
 			int y = (int) (o.posY / Game.tile_size);
 
 			if (o.bulletCollision && x >= 0 && x < Game.currentSizeX && y >= 0 && y < Game.currentSizeY)
+			{
 				Game.game.solidGrid[x][y] = true;
+
+				if (!o.shouldShootThrough)
+					Game.game.unbreakableGrid[x][y] = true;
+			}
 
 			if (o.tankCollision && x >= 0 && x < Game.currentSizeX && y >= 0 && y < Game.currentSizeY)
 				solidGrid[x][y] = true;
@@ -380,6 +408,8 @@ public class Level
 				}
 			}
 		}
+
+		ArrayList<Tank> tanksToRemove = new ArrayList<>();
 
 		if (!preset[2].equals(""))
 		{
@@ -431,7 +461,16 @@ public class Level
 				}
 				else
 				{
-					t = Game.registryTank.getEntry(type).getTank(x, y, angle);
+					if (customTanksMap.get(type) != null)
+						t = customTanksMap.get(type).instantiate(type, x, y, angle);
+					else
+						t = Game.registryTank.getEntry(type).getTank(x, y, angle);
+
+					t.crusadeID = currentCrusadeID;
+					currentCrusadeID++;
+
+					if (Crusade.crusadeMode && !Crusade.currentCrusade.respawnTanks && Crusade.currentCrusade.retry && !Crusade.currentCrusade.livingTankIDs.contains(t.crusadeID))
+						tanksToRemove.add(t);
 				}
 
 				t.team = team;
@@ -439,7 +478,8 @@ public class Level
 				if (remote)
 				{
 					t.registerNetworkID();
-					Game.movables.add(new TankRemote(t));
+					TankRemote t1 = new TankRemote(t);
+					Game.movables.add(t1);
 				}
 				else
 					Game.movables.add(t);
@@ -566,6 +606,8 @@ public class Level
 			}
 		}
 
+		playerCount = Math.min(playerCount, this.includedPlayers.size());
+
 		if (sc == null && !preview)
 		{
 			for (int i = 0; i < playerCount; i++)
@@ -619,18 +661,34 @@ public class Level
 		for (EventCreatePlayer e: playerEvents)
 			e.execute();
 
+		if (Crusade.crusadeMode && Crusade.currentCrusade.retry)
+		{
+			for (Tank t: tanksToRemove)
+			{
+				INetworkEvent e = new EventRemoveTank(t);
+				Game.removeMovables.add(t);
+				Game.eventsOut.add(e);
+			}
+		}
+
 		if (!remote && sc == null || (sc instanceof ScreenLevelEditor))
 			Game.eventsOut.add(new EventEnterLevel());
 	}
 
 	public void reloadTiles()
 	{
+		Drawing.drawing.forceRedrawTerrain();
+
 		Game.currentSizeX = (int) (sizeX * Game.bgResMultiplier);
 		Game.currentSizeY = (int) (sizeY * Game.bgResMultiplier);
 
 		currentColorR = colorR;
 		currentColorG = colorG;
 		currentColorB = colorB;
+
+		currentColorVarR = colorVarR;
+		currentColorVarG = colorVarG;
+		currentColorVarB = colorVarB;
 
 		currentLightIntensity = light;
 		currentShadowIntensity = shadow;
@@ -645,17 +703,29 @@ public class Level
 		{
 			for (int j = 0; j < Game.currentSizeY; j++)
 			{
-				Game.tilesR[i][j] = (colorR + Math.random() * colorVarR);
-				Game.tilesG[i][j] = (colorG + Math.random() * colorVarG);
-				Game.tilesB[i][j] = (colorB + Math.random() * colorVarB);
-				Game.tilesDepth[i][j] = Math.random() * 10;
+				if (Game.fancyTerrain)
+				{
+					Game.tilesR[i][j] = (colorR + Math.random() * colorVarR);
+					Game.tilesG[i][j] = (colorG + Math.random() * colorVarG);
+					Game.tilesB[i][j] = (colorB + Math.random() * colorVarB);
+					Game.tilesDepth[i][j] = Math.random() * 10;
+				}
+				else
+				{
+					Game.tilesR[i][j] = colorR;
+					Game.tilesG[i][j] = colorG;
+					Game.tilesB[i][j] = colorB;
+					Game.tilesDepth[i][j] = 0;
+				}
 			}
 		}
 
 		Game.game.heightGrid = new double[Game.currentSizeX][Game.currentSizeY];
+		Game.game.groundHeightGrid = new double[Game.currentSizeX][Game.currentSizeY];
 		Drawing.drawing.setScreenBounds(Game.tile_size * sizeX, Game.tile_size * sizeY);
 
 		Game.game.solidGrid = new boolean[Game.currentSizeX][Game.currentSizeY];
+		Game.game.unbreakableGrid = new boolean[Game.currentSizeX][Game.currentSizeY];
 
 		for (Obstacle o: Game.obstacles)
 		{
@@ -663,15 +733,20 @@ public class Level
 			int y = (int) (o.posY / Game.tile_size);
 
 			if (o.bulletCollision && x >= 0 && x < Game.currentSizeX && y >= 0 && y < Game.currentSizeY)
+			{
 				Game.game.solidGrid[x][y] = true;
+
+				if (!o.shouldShootThrough)
+					Game.game.unbreakableGrid[x][y] = true;
+			}
 		}
 
 		ScreenLevelEditor s = null;
 		
 		if (Game.screen instanceof ScreenLevelEditor)
 			s = (ScreenLevelEditor) Game.screen;
-		else if (Game.screen instanceof ScreenLevelBuilderOverlay)
-			s = ((ScreenLevelBuilderOverlay) Game.screen).screenLevelEditor;
+		else if (Game.screen instanceof ScreenLevelEditorOverlay)
+			s = ((ScreenLevelEditorOverlay) Game.screen).screenLevelEditor;
 
 		if (s != null)
 			s.selectedTiles = new boolean[Game.currentSizeX][Game.currentSizeY];

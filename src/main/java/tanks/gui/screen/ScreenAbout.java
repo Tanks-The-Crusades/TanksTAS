@@ -8,121 +8,90 @@ import java.net.URL;
 
 public class ScreenAbout extends Screen
 {
-    Button link = new Button(this.centerX - this.objXSpace / 2, this.centerY, this.objWidth, this.objHeight, "GitHub", new Runnable()
+    Button link = new Button(this.centerX - this.objXSpace / 2, this.centerY, this.objWidth, this.objHeight, "GitHub", () ->
     {
-        @Override
-        public void run()
+        try
         {
-            try
-            {
-                Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks"));
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks"));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
     );
 
-    Button chatroom = new Button(this.centerX - this.objXSpace / 2, this.centerY + this.objYSpace, this.objWidth, this.objHeight, "Discord", new Runnable()
+    Button chatroom = new Button(this.centerX - this.objXSpace / 2, this.centerY + this.objYSpace, this.objWidth, this.objHeight, "Discord", () ->
     {
-        @Override
-        public void run()
+        try
         {
-            try
-            {
-                Game.game.window.openLink(new URL("https://discord.gg/aWPaJD3"));
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            Game.game.window.openLink(new URL("https://discord.gg/aWPaJD3"));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
     );
 
-    Button changelogs = new Button(this.centerX - this.objXSpace / 2, this.centerY - this.objYSpace, this.objWidth, this.objHeight, "Changelogs", new Runnable()
+    Button changelogs = new Button(this.centerX - this.objXSpace / 2, this.centerY - this.objYSpace, this.objWidth, this.objHeight, "Changelogs", () ->
     {
-        @Override
-        public void run()
+        ScreenChangelog s = new ScreenChangelog();
+        int p = 0;
+        for (ScreenChangelog.Changelog l: ScreenChangelog.Changelog.logs)
         {
-            ScreenChangelog s = new ScreenChangelog();
-            int p = 0;
-            for (ScreenChangelog.Changelog l: ScreenChangelog.Changelog.logs)
-            {
-                s.add(l.pages);
-                p = l.pages.length;
-            }
+            s.add(l.pages);
+            p = l.pages.length;
+        }
 
-            s.currentPage = s.pages.size() - p;
-            s.pageContents = s.pages.get(s.currentPage).split("\n");
+        s.currentPage = s.pages.size() - p;
+        s.pageContents = s.pages.get(s.currentPage).split("\n");
 
 
-            Game.screen = s;
+        Game.screen = s;
+    }
+    );
+
+    Button libraries = new Button(this.centerX + this.objXSpace / 2, this.centerY + this.objYSpace, this.objWidth, this.objHeight, "Library licenses", () ->
+    {
+        try
+        {
+            Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks/tree/master/src/main/java/licenses"));
+    }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
     );
 
-    Button libraries = new Button(this.centerX + this.objXSpace / 2, this.centerY + this.objYSpace, this.objWidth, this.objHeight, "Library licenses", new Runnable()
+    Button license = new Button(this.centerX + this.objXSpace / 2, this.centerY - this.objYSpace, this.objWidth, this.objHeight, "License", () ->
     {
-        @Override
-        public void run()
+        try
         {
-            try
-            {
-                Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks/tree/master/src/main/java/licenses"));
+            Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks/blob/master/LICENSE.md"));
         }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
     );
 
-    Button license = new Button(this.centerX + this.objXSpace / 2, this.centerY - this.objYSpace, this.objWidth, this.objHeight, "License", new Runnable()
+    Button privacy = new Button(this.centerX + this.objXSpace / 2, this.centerY, this.objWidth, this.objHeight, "Privacy policy", () ->
     {
-        @Override
-        public void run()
+        try
         {
-            try
-            {
-                Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks/blob/master/LICENSE.md"));
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks/blob/master/PRIVACY.md"));
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
     );
 
-    Button privacy = new Button(this.centerX + this.objXSpace / 2, this.centerY, this.objWidth, this.objHeight, "Privacy policy", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            try
-            {
-                Game.game.window.openLink(new URL("https://github.com/aehmttw/Tanks/blob/master/PRIVACY.md"));
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-    }
-    );
-
-    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenTitle();
-        }
-    }
+    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", () -> Game.screen = new ScreenTitle()
     );
 
 
@@ -130,27 +99,27 @@ public class ScreenAbout extends Screen
     {
         double imgsize = 25 * Drawing.drawing.interfaceScaleZoom;
 
-        this.link.image = "link.png";
+        this.link.image = "icons/link.png";
         this.link.imageSizeX = imgsize;
         this.link.imageSizeY = imgsize;
         this.link.imageXOffset = 145 * this.link.sizeX / 350;
 
-        this.libraries.image = "link.png";
+        this.libraries.image = "icons/link.png";
         this.libraries.imageSizeX = imgsize;
         this.libraries.imageSizeY = imgsize;
         this.libraries.imageXOffset = 145 * this.libraries.sizeX / 350;
 
-        this.chatroom.image = "link.png";
+        this.chatroom.image = "icons/link.png";
         this.chatroom.imageSizeX = imgsize;
         this.chatroom.imageSizeY = imgsize;
         this.chatroom.imageXOffset = 145 * this.chatroom.sizeX / 350;
 
-        this.license.image = "link.png";
+        this.license.image = "icons/link.png";
         this.license.imageSizeX = imgsize;
         this.license.imageSizeY = imgsize;
         this.license.imageXOffset = 145 * this.license.sizeX / 350;
 
-        this.privacy.image = "link.png";
+        this.privacy.image = "icons/link.png";
         this.privacy.imageSizeX = imgsize;
         this.privacy.imageSizeY = imgsize;
         this.privacy.imageXOffset = 145 * this.privacy.sizeX / 350;
@@ -185,9 +154,9 @@ public class ScreenAbout extends Screen
 
         Drawing.drawing.setColor(0, 0, 0);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "About");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "About");
         Drawing.drawing.setInterfaceFontSize(this.textSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 2.5, "Version: " + Game.version);
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 2.5, "Version: %s", Game.version);
 
         int extensions = Game.extensionRegistry.extensions.size();
         if (extensions > 0)
@@ -195,9 +164,9 @@ public class ScreenAbout extends Screen
             Drawing.drawing.setInterfaceFontSize(this.textSize * 0.75);
 
             if (extensions > 1)
-                Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, extensions + " extensions loaded");
+                Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, "%d extensions loaded", extensions);
             else
-                Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, extensions + " extension loaded");
+                Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, "%d extension loaded", extensions);
         }
     }
 }

@@ -4,6 +4,7 @@ import basewindow.InputCodes;
 import basewindow.InputPoint;
 import tanks.*;
 import tanks.gui.screen.ScreenInfo;
+import tanks.translation.Translation;
 
 import java.util.ArrayList;
 
@@ -14,7 +15,10 @@ public class TextBox implements IDrawable, ITrigger
 	public double posY;
 	public double sizeX;
 	public double sizeY;
+
+	public String rawLabelText;
 	public String labelText;
+	public String translatedLabelText;
 
 	public String previousInputText;
 	public String inputText;
@@ -45,7 +49,7 @@ public class TextBox implements IDrawable, ITrigger
 	public boolean lowerCase = false;
 	public boolean enableCaps = false;
 
-	public int maxChars = 18;
+	public int maxChars = 20;
 	public double maxValue = Integer.MAX_VALUE;
 	public double minValue = Integer.MIN_VALUE;
 
@@ -94,7 +98,7 @@ public class TextBox implements IDrawable, ITrigger
 
 		this.sizeX = sX;
 		this.sizeY = sY;
-		this.labelText = text;
+		this.setText(text);
 
 		this.inputText = defaultText;
 		this.previousInputText = defaultText;
@@ -156,10 +160,12 @@ public class TextBox implements IDrawable, ITrigger
 			else
 				drawing.setColor(this.selectedColorR, this.selectedColorG, this.selectedColorB);
 		}
-		else if (hover && !Game.game.window.touchscreen)
+		else if (hover && !Game.game.window.touchscreen && this.enabled)
 			drawing.setColor(this.hoverColorR, this.hoverColorG, this.hoverColorB);
-		else
+		else if (this.enabled)
 			drawing.setColor(this.colorR, this.colorG, this.colorB);
+		else
+			drawing.setColor((this.colorR + this.bgColorR) / 2, (this.colorG + this.bgColorG) / 2, (this.colorB + this.bgColorB) / 2);
 
 		drawing.fillInterfaceRect(posX, posY, sizeX - sizeY, sizeY * m);
 		drawing.fillInterfaceOval(posX - sizeX / 2 + sizeY / 2, posY, sizeY * m, sizeY * m);
@@ -167,7 +173,7 @@ public class TextBox implements IDrawable, ITrigger
 
 		drawing.setColor(0, 0, 0);
 
-		drawing.drawInterfaceText(posX, posY - sizeY * 13 / 16, labelText);
+		drawing.drawInterfaceText(posX, posY - sizeY * 13 / 16, translatedLabelText);
 
 		this.drawInput();
 
@@ -239,16 +245,20 @@ public class TextBox implements IDrawable, ITrigger
 		{
 			drawing.setColor(255, 255, 255);
 			drawing.fillInterfaceOval(this.posX + this.sizeX / 2 - this.sizeY / 2, this.posY - sizeY * 13 / 16, this.sizeY * 3 / 4, this.sizeY * 3 / 4);
-			drawing.drawInterfaceImage("paste.png", this.posX + this.sizeX / 2 - this.sizeY / 2, this.posY - sizeY * 13 / 16, this.sizeY * 1 / 2, this.sizeY * 1 / 2);
+			drawing.drawInterfaceImage("icons/paste.png", this.posX + this.sizeX / 2 - this.sizeY / 2, this.posY - sizeY * 13 / 16, this.sizeY * 1 / 2, this.sizeY * 1 / 2);
 
 			drawing.fillInterfaceOval(this.posX + this.sizeX / 2 - this.sizeY * 3 / 2, this.posY - sizeY * 13 / 16, this.sizeY * 3 / 4, this.sizeY * 3 / 4);
-			drawing.drawInterfaceImage("copy.png", this.posX + this.sizeX / 2 - this.sizeY * 3 / 2, this.posY - sizeY * 13 / 16, this.sizeY * 1 / 2, this.sizeY * 1 / 2);
+			drawing.drawInterfaceImage("icons/copy.png", this.posX + this.sizeX / 2 - this.sizeY * 3 / 2, this.posY - sizeY * 13 / 16, this.sizeY * 1 / 2, this.sizeY * 1 / 2);
 
 		}
 	}
 
 	public void drawInput()
 	{
+		double size = this.sizeY * 0.6;
+		if (Game.game.window.fontRenderer.getStringSizeX(Drawing.drawing.fontSize, inputText) / Drawing.drawing.interfaceScale > this.sizeX - 80)
+			Drawing.drawing.setInterfaceFontSize(size * (this.sizeX - 80) / (Game.game.window.fontRenderer.getStringSizeX(Drawing.drawing.fontSize, inputText) / Drawing.drawing.interfaceScale));
+
 		if (selected)
 			Drawing.drawing.drawInterfaceText(posX, posY, inputText + "\u00a7127127127255_");
 		else
@@ -318,18 +328,23 @@ public class TextBox implements IDrawable, ITrigger
 
 			if (this.shouldAddEffect())
 			{
-				this.effectTimer += 0.25 * (this.sizeX + this.sizeY) / 400 * Math.random() * Game.effectMultiplier;
-
-				while (this.effectTimer >= 0.4 / Panel.frameFrequency)
-				{
-					this.effectTimer -= 0.4 / Panel.frameFrequency;
-					Button.addEffect(this.posX, this.posY, this.sizeX - this.sizeY * (1 - 0.8), this.sizeY * 0.8, this.glowEffects);
-				}
+				this.addEffect();
 			}
 		}
 
 		if (this.selected)
 			Panel.selectedTextBox = this;
+	}
+
+	public void addEffect()
+	{
+		this.effectTimer += 0.25 * (this.sizeX + this.sizeY) / 400 * Math.random() * Game.effectMultiplier;
+
+		while (this.effectTimer >= 0.4 / Panel.frameFrequency)
+		{
+			this.effectTimer -= 0.4 / Panel.frameFrequency;
+			Button.addEffect(this.posX, this.posY, this.sizeX - this.sizeY * (1 - 0.8), this.sizeY * 0.8, this.glowEffects);
+		}
 	}
 
 	public boolean shouldAddEffect()
@@ -359,7 +374,7 @@ public class TextBox implements IDrawable, ITrigger
 				handled = true;
 				Drawing.drawing.playVibration("click");
 				Drawing.drawing.playSound("bullet_explode.ogg", 2f, 0.3f);
-				Game.screen = new ScreenInfo(Game.screen, this.labelText, this.hoverText);
+				Game.screen = new ScreenInfo(Game.screen, this.translatedLabelText, this.hoverText);
 			}
 			else if (!selected)
 			{
@@ -459,9 +474,14 @@ public class TextBox implements IDrawable, ITrigger
 
 		if (Game.glowEnabled)
 		{
-			for (int i = 0; i < 0.2 * (this.sizeX + this.sizeY) * Game.effectMultiplier; i++)
-				Button.addEffect(this.posX, this.posY, this.sizeX - this.sizeY * (1 - 0.8), this.sizeY * 0.8, this.glowEffects, Math.random() * 4, 0.8, 0.25);
+			this.submitEffect();
 		}
+	}
+
+	public void submitEffect()
+	{
+		for (int i = 0; i < 0.2 * (this.sizeX + this.sizeY) * Game.effectMultiplier; i++)
+			Button.addEffect(this.posX, this.posY, this.sizeX - this.sizeY * (1 - 0.8), this.sizeY * 0.8, this.glowEffects, Math.random() * 4, 0.8, 0.25);
 	}
 
 	public void checkKeys()
@@ -709,7 +729,7 @@ public class TextBox implements IDrawable, ITrigger
 
 	public static void drawTallGlow(double posX, double posY, double sizeX, double sizeY, double extra, double size, double r, double g, double b, double a, boolean glow)
 	{
-		Game.game.window.setBatchMode(true, true, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(true, true, false, glow);
 
 		Drawing drawing = Drawing.drawing;
 		drawing.setColor(0, 0, 0, 0);
@@ -747,8 +767,8 @@ public class TextBox implements IDrawable, ITrigger
 		drawing.addInterfaceVertex(posX - sizeX / 2 + sizeY / 2, posY, 0);
 		drawing.addInterfaceVertex(posX + sizeX / 2 - sizeY / 2, posY, 0);
 
-		Game.game.window.setBatchMode(false, true, false, glow);
-		Game.game.window.setBatchMode(true, false, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(false, true, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(true, false, false, glow);
 
 		for (int i = 0; i < 15; i++)
 		{
@@ -777,6 +797,34 @@ public class TextBox implements IDrawable, ITrigger
 			drawing.addInterfaceVertex(posX + sizeX / 2 - sizeY / 2 + sizeY * Math.cos((i + 46) / 30.0 * Math.PI) * size, posY - extra + sizeY * Math.sin((i + 46) / 30.0 * Math.PI) * size, 0);
 		}
 
-		Game.game.window.setBatchMode(false, false, false, glow);
+		Game.game.window.shapeRenderer.setBatchMode(false, false, false, glow);
 	}
+
+	public void setText(String text)
+	{
+		this.rawLabelText = text;
+		this.labelText = text;
+		this.translatedLabelText = Translation.translate(text);
+	}
+
+	public void setText(String text, String text2)
+	{
+		this.rawLabelText = text + text2;
+		this.labelText = text + text2;
+		this.translatedLabelText = Translation.translate(text) + Translation.translate(text2);
+	}
+
+	public void setText(String text, Object... objects)
+	{
+		this.rawLabelText = text;
+		this.labelText = String.format(text, objects);
+		this.translatedLabelText = Translation.translate(text, objects);
+	}
+
+	public void setTextArgs(Object... objects)
+	{
+		this.labelText = String.format(this.rawLabelText, objects);
+		this.translatedLabelText = Translation.translate(this.rawLabelText, objects);
+	}
+
 }

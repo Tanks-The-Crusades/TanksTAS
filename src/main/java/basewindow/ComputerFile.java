@@ -1,9 +1,6 @@
 package basewindow;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,8 +11,10 @@ import java.util.Scanner;
 public class ComputerFile extends BaseFile
 {
     public File file;
-    public Scanner scanner;
+    public BufferedReader scanner;
     public PrintWriter printWriter;
+
+    public String nextLine = null;
 
     public ComputerFile(String path)
     {
@@ -51,7 +50,7 @@ public class ComputerFile extends BaseFile
     public ArrayList<String> getSubfiles() throws IOException
     {
         DirectoryStream<Path> ds = Files.newDirectoryStream(Paths.get(this.path));
-        ArrayList<String> files = new ArrayList<String>();
+        ArrayList<String> files = new ArrayList<>();
 
         for (Path p: ds)
             files.add(p.toString());
@@ -64,23 +63,35 @@ public class ComputerFile extends BaseFile
     @Override
     public void startReading() throws FileNotFoundException
     {
-        scanner = new Scanner(this.file);
+        scanner = new BufferedReader(new FileReader(file));
     }
 
     @Override
-    public String nextLine()
+    public String nextLine() throws IOException
     {
-        return scanner.nextLine();
+        if (nextLine != null)
+        {
+            String s = nextLine;
+            nextLine = null;
+            return s;
+        }
+
+        return scanner.readLine();
     }
 
     @Override
-    public boolean hasNextLine()
+    public boolean hasNextLine() throws IOException
     {
-        return scanner.hasNextLine();
+        if (nextLine != null)
+            return true;
+
+        nextLine = scanner.readLine();
+
+        return nextLine != null;
     }
 
     @Override
-    public void stopReading()
+    public void stopReading() throws IOException
     {
         scanner.close();
     }

@@ -50,16 +50,12 @@ public class ScreenJoinSteamFriends extends Screen
                         newName.append(c);
                 }
 
-                f.add(new Button(0, 0, this.objWidth, this.objHeight, newName.toString(), new Runnable()
+                f.add(new Button(0, 0, this.objWidth, this.objHeight, newName.toString(), () ->
                 {
-                    @Override
-                    public void run()
-                    {
-                        String s = screen.ip.inputText;
-                        screen.ip.inputText = "steam:" + i;
-                        screen.join.function.run();
-                        screen.ip.inputText = s;
-                    }
+                    String s1 = screen.ip.inputText;
+                    screen.ip.inputText = "steam:" + i;
+                    screen.join.function.run();
+                    screen.ip.inputText = s1;
                 }));
             }
         }
@@ -84,6 +80,6 @@ public class ScreenJoinSteamFriends extends Screen
 
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
         Drawing.drawing.setColor(0, 0, 0);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 4.5, "Steam friends playing Tanks");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 4.5, "Steam friends playing Tanks");
     }
 }

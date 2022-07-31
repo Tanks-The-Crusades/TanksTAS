@@ -1,13 +1,25 @@
 package tanks;
 
 import basewindow.IWindowHandler;
-import tanks.gui.screen.ScreenOptions;
-import tanks.gui.screen.ScreenParty;
-import tanks.gui.screen.ScreenPartyHost;
-import tanks.gui.screen.ScreenPartyLobby;
+import tanks.gui.screen.*;
+import tanks.translation.Translation;
 
 public class GameWindowHandler implements IWindowHandler
 {
+	@Override
+	public boolean attemptCloseWindow()
+	{
+		if (!Game.warnBeforeClosing)
+			return true;
+
+		if (!Game.screen.allowClose)
+		{
+			Game.screen.onAttemptClose();
+		}
+
+		return Game.screen.allowClose;
+	}
+
 	@Override
 	public void onWindowClose() 
 	{
@@ -23,9 +35,9 @@ public class GameWindowHandler implements IWindowHandler
 
 		try
 		{
-			if (Crusade.currentCrusade != null && !ScreenPartyHost.isServer && !ScreenPartyLobby.isClient)
+			if (Crusade.currentCrusade != null && !ScreenPartyHost.isServer && !ScreenPartyLobby.isClient && Game.screen instanceof ScreenGame)
 			{
-				Crusade.currentCrusade.crusadePlayers.get(Game.player).saveCrusade();
+				Crusade.currentCrusade.quit();
 			}
 		}
 		catch (Exception e)

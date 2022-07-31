@@ -6,7 +6,8 @@ import tanks.Game;
 import tanks.Level;
 import tanks.gui.*;
 import tanks.hotbar.item.Item;
-import tanks.hotbar.item.property.*;
+import tanks.gui.property.*;
+import tanks.translation.Translation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,25 +27,9 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
 
     public ArrayList<ITrigger> properties = new ArrayList<>();
 
-    public Button next = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 + 240, this.objWidth, this.objHeight, "Next page", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            page++;
-        }
-    }
-    );
+    public Button next = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 + 240, this.objWidth, this.objHeight, "Next page", () -> page++);
 
-    public Button previous = new Button(Drawing.drawing.interfaceSizeX / 2 - 190, Drawing.drawing.interfaceSizeY / 2 + 240, this.objWidth, this.objHeight, "Previous page", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            page--;
-        }
-    }
-    );
+    public Button previous = new Button(Drawing.drawing.interfaceSizeX / 2 - 190, Drawing.drawing.interfaceSizeY / 2 + 240, this.objWidth, this.objHeight, "Previous page", () -> page--);
 
     public Button back = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 300, this.objWidth, this.objHeight, "Ok", new Runnable()
     {
@@ -58,23 +43,15 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
     }
     );
 
-    public Button dismissMessage = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + Drawing.drawing.objHeight, Drawing.drawing.objWidth, Drawing.drawing.objHeight, "Ok", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            message = null;
-        }
-    }
-    );
+    public Button dismissMessage = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + Drawing.drawing.objHeight, Drawing.drawing.objWidth, Drawing.drawing.objHeight, "Ok", () -> message = null);
 
     public Button delete = new Button(Drawing.drawing.interfaceSizeX / 2 - 190, Drawing.drawing.interfaceSizeY / 2 - 250, this.objWidth, this.objHeight, "Delete item", new Runnable()
     {
         @Override
         public void run()
         {
-            screen.removeItem(item);
             Game.screen = (Screen) screen;
+            screen.removeItem(item);
         }
     }
     );
@@ -118,13 +95,25 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
     {
         super(350, 40, 380, 60);
 
+        this.allowClose = false;
+
+        this.next.image = "icons/forward.png";
+        this.next.imageSizeX = 25;
+        this.next.imageSizeY = 25;
+        this.next.imageXOffset = 145;
+
+        this.previous.image = "icons/back.png";
+        this.previous.imageSizeX = 25;
+        this.previous.imageSizeY = 25;
+        this.previous.imageXOffset = -145;
+
         this.item = item;
         this.screen = s;
 
         this.music = ((Screen)s).music;
         this.musicID = ((Screen)s).musicID;
 
-        for (ItemProperty p: this.item.properties.values())
+        for (UIProperty p: this.item.properties.values())
         {
             String name = Game.formatString(p.name);
 
@@ -134,7 +123,7 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
             if (p.name.equals("unlocks-after-level") && omitUnlockLevel)
                 continue;
 
-            if (p instanceof ItemPropertyInt)
+            if (p instanceof UIPropertyInt)
             {
                 TextBox t = new TextBox(0, 0, this.objWidth, this.objHeight, name, () -> {}, p.value + "");
                 t.function = () ->
@@ -151,7 +140,7 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
 
                 properties.add(t);
             }
-            else if (p instanceof ItemPropertyDouble)
+            else if (p instanceof UIPropertyDouble)
             {
                 TextBox t = new TextBox(0, 0, this.objWidth, this.objHeight, name, () -> {}, p.value + "");
                 t.function = () ->
@@ -176,7 +165,7 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
 
                 properties.add(t);
             }
-            else if (p instanceof ItemPropertyString)
+            else if (p instanceof UIPropertyString)
             {
                 TextBox t = new TextBox(0, 0, this.objWidth, this.objHeight, name, () -> {}, p.value + "");
                 t.function = () ->
@@ -189,10 +178,11 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
 
                 t.enableCaps = true;
                 t.allowSpaces = true;
+                t.maxChars = 18;
 
                 properties.add(t);
             }
-            else if (p instanceof ItemPropertyBoolean)
+            else if (p instanceof UIPropertyBoolean)
             {
                 Selector t = new Selector(0, 0, this.objWidth, this.objHeight, name, new String[]{"Yes", "No"}, () -> {});
 
@@ -207,11 +197,11 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
 
                 properties.add(t);
             }
-            else if (p instanceof ItemPropertySelector)
+            else if (p instanceof UIPropertySelector)
             {
-                Selector t = new Selector(0, 0, this.objWidth, this.objHeight, name, ((ItemPropertySelector) p).values, () -> {});
+                Selector t = new Selector(0, 0, this.objWidth, this.objHeight, name, ((UIPropertySelector) p).values, () -> {});
                 t.selectedOption = (int) p.value;
-                t.images = ((ItemPropertySelector) p).images;
+                t.images = ((UIPropertySelector) p).images;
 
                 t.function = () -> p.value = t.selectedOption;
 
@@ -219,9 +209,10 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
 
                 properties.add(t);
             }
-            else if (p instanceof ItemPropertyImageSelector)
+            else if (p instanceof UIPropertyImageSelector)
             {
-                ImageSelector t = new ImageSelector(0, 0, this.objWidth, this.objHeight, name, ((ItemPropertyImageSelector) p).values, () -> {});
+                SelectorImage t = new SelectorImage(0, 0, this.objWidth, this.objHeight, name, ((UIPropertyImageSelector) p).values, () -> {});
+                t.drawImages = true;
                 t.selectedOption = (int) p.value;
 
                 t.function = () -> p.value = t.selectedOption;
@@ -314,7 +305,7 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
                 Drawing.drawing.setColor(0, 0, 0);
 
             Drawing.drawing.setInterfaceFontSize(Drawing.drawing.textSize);
-            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 60, this.message);
+            Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 60, this.message);
         }
         else
         {
@@ -336,8 +327,8 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
                     Drawing.drawing.setColor(0, 0, 0);
 
                 Drawing.drawing.setInterfaceFontSize(this.textSize);
-                Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 200,
-                        "Page " + (page + 1) + " of " + (properties.size() / (rows * 3) + Math.min(1, properties.size() % (rows * 3))));
+                Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 200,
+                        "Page %d of %d", (page + 1), (properties.size() / (rows * 3) + Math.min(1, properties.size() % (rows * 3))));
             }
 
             for (int i = Math.min(page * rows * 3 + rows * 3, properties.size()) - 1; i >= page * rows * 3; i--)
@@ -351,7 +342,7 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
                 Drawing.drawing.setColor(0, 0, 0);
 
             Drawing.drawing.setInterfaceFontSize(this.titleSize);
-            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 300, item.getTypeName() + " item properties");
+            Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 300, "%s item properties", Translation.translate(item.getTypeName()));
         }
     }
 
@@ -389,5 +380,11 @@ public class ScreenEditItem extends Screen implements IConditionalOverlayScreen
             return ((IConditionalOverlayScreen) screen).isOverlayEnabled();
 
         return screen instanceof ScreenGame || screen instanceof ILevelPreviewScreen || screen instanceof IOverlayScreen;
+    }
+
+    @Override
+    public void onAttemptClose()
+    {
+        ((Screen)this.screen).onAttemptClose();
     }
 }

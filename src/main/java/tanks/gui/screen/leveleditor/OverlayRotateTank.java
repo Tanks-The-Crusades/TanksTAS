@@ -4,57 +4,17 @@ import tanks.Drawing;
 import tanks.gui.Button;
 import tanks.gui.screen.Screen;
 
-public class OverlayRotateTank extends ScreenLevelBuilderOverlay
+public class OverlayRotateTank extends ScreenLevelEditorOverlay
 {
-    public Button rotateUp = new Button(this.centerX, this.centerY - 100, 75, 75, "Up", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.mouseTankOrientation = 3;
-        }
-    }
-    );
+    public Button rotateUp = new Button(this.centerX, this.centerY - 100, 75, 75, "", () -> screenLevelEditor.mouseTankOrientation = 3);
 
-    public Button rotateRight = new Button(this.centerX + 100, this.centerY, 75, 75, "Right", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.mouseTankOrientation = 0;
-        }
-    }
-    );
+    public Button rotateRight = new Button(this.centerX + 100, this.centerY, 75, 75, "", () -> screenLevelEditor.mouseTankOrientation = 0);
 
-    public Button rotateDown = new Button(this.centerX, this.centerY + 100, 75, 75, "Down", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.mouseTankOrientation = 1;
-        }
-    }
-    );
+    public Button rotateDown = new Button(this.centerX, this.centerY + 100, 75, 75, "", () -> screenLevelEditor.mouseTankOrientation = 1);
 
-    public Button rotateLeft = new Button(this.centerX - 100, this.centerY, 75, 75, "Left", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.mouseTankOrientation = 2;
-        }
-    }
-    );
+    public Button rotateLeft = new Button(this.centerX - 100, this.centerY, 75, 75, "", () -> screenLevelEditor.mouseTankOrientation = 2);
 
-    public Button back = new Button(this.centerX, this.centerY, 75, 75, "Done", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            escape();
-        }
-    }
-    );
+    public Button back = new Button(this.centerX, this.centerY, 75, 75, "Done", this::escape);
 
     public OverlayRotateTank(Screen previous, ScreenLevelEditor screenLevelEditor)
     {
@@ -65,6 +25,26 @@ public class OverlayRotateTank extends ScreenLevelBuilderOverlay
         this.rotateLeft.fontSize = 24;
         this.rotateUp.fontSize = 24;
         this.back.fontSize = 24;
+
+        rotateUp.image = "icons/arrow_up.png";
+        rotateUp.imageSizeX = 50;
+        rotateUp.imageSizeY = 50;
+        rotateUp.imageYOffset = -5;
+
+        rotateDown.image = "icons/arrow_down.png";
+        rotateDown.imageSizeX = 50;
+        rotateDown.imageSizeY = 50;
+        rotateDown.imageYOffset = 5;
+
+        rotateLeft.image = "icons/back.png";
+        rotateLeft.imageSizeX = 50;
+        rotateLeft.imageSizeY = 50;
+        rotateLeft.imageXOffset = -5;
+
+        rotateRight.image = "icons/forward.png";
+        rotateRight.imageSizeX = 50;
+        rotateRight.imageSizeY = 50;
+        rotateRight.imageXOffset = 5;
     }
 
     public void update()
@@ -99,7 +79,7 @@ public class OverlayRotateTank extends ScreenLevelBuilderOverlay
 
         Drawing.drawing.setColor(screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3, "Select tank orientation");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3, "Select tank orientation");
 
         this.rotateUp.draw();
         this.rotateLeft.draw();

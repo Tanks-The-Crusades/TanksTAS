@@ -12,14 +12,7 @@ public class ScreenPartyKick extends Screen
 
     public Button kick;
 
-    public Button cancel = new Button(this.centerX - this.objXSpace / 2, this.centerY + this.objYSpace * 2, this.objWidth, this.objHeight, "Cancel", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = ScreenPartyHost.activeScreen;
-        }
-    }
+    public Button cancel = new Button(this.centerX - this.objXSpace / 2, this.centerY + this.objYSpace * 2, this.objWidth, this.objHeight, "Cancel", () -> Game.screen = ScreenPartyHost.activeScreen
     );
 
     public ScreenPartyKick(ServerHandler h)
@@ -28,14 +21,10 @@ public class ScreenPartyKick extends Screen
         this.musicID = "menu";
 
         handler = h;
-        kick = new Button(this.centerX + this.objXSpace / 2, this.centerY + this.objYSpace * 2, this.objWidth, this.objHeight, "Kick " + handler.username, new Runnable()
+        kick = new Button(this.centerX + this.objXSpace / 2, this.centerY + this.objYSpace * 2, this.objWidth, this.objHeight, "Kick " + handler.username, () ->
         {
-             @Override
-            public void run()
-            {
-                handler.sendEventAndClose(new EventKick("You were kicked from the party"));
-                Game.screen = ScreenPartyHost.activeScreen;
-            }
+            handler.sendEventAndClose(new EventKick("You were kicked from the party"));
+            Game.screen = ScreenPartyHost.activeScreen;
         }
         );
     }
@@ -54,7 +43,7 @@ public class ScreenPartyKick extends Screen
 
         Drawing.drawing.setInterfaceFontSize(this.textSize);
         Drawing.drawing.setColor(0, 0, 0);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 1.5, "Would you like to kick " + handler.username + " from the party?");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 1.5, "Would you like to kick %s from the party?", handler.username);
 
         cancel.draw();
         kick.draw();

@@ -2,13 +2,15 @@ package tanks.bullet;
 
 import tanks.*;
 import tanks.event.*;
+import tanks.gui.ChatMessage;
+import tanks.gui.IFixedMenu;
+import tanks.gui.Scoreboard;
 import tanks.gui.screen.ScreenGame;
+import tanks.gui.screen.ScreenPartyHost;
+import tanks.gui.screen.ScreenPartyLobby;
 import tanks.hotbar.item.ItemBullet;
 import tanks.obstacle.Obstacle;
-import tanks.tank.Mine;
-import tanks.tank.Ray;
-import tanks.tank.Tank;
-import tanks.tank.TankPlayerRemote;
+import tanks.tank.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,8 +18,8 @@ import java.util.HashMap;
 public class Bullet extends Movable implements IDrawable
 {
 	public static int currentID = 0;
-	public static ArrayList<Integer> freeIDs = new ArrayList<Integer>();
-	public static HashMap<Integer, Bullet> idMap = new HashMap<Integer, Bullet>();
+	public static ArrayList<Integer> freeIDs = new ArrayList<>();
+	public static HashMap<Integer, Bullet> idMap = new HashMap<>();
 
 	public static String bullet_name = "normal";
 
@@ -74,26 +76,27 @@ public class Bullet extends Movable implements IDrawable
 	public double collisionX;
 	public double collisionY;
 
+	public boolean bulletCollision = true;
 	public boolean enableCollision = true;
+
+	public boolean externalBulletCollision = true;
 
 	public boolean affectsMaxLiveBullets;
 
 	public Tank tankInside = null;
 
 	public String itemSound = "shoot.ogg";
+	public double pitchVariation = 0;
 
-	public ArrayList<Trail>[] trails;
+	protected ArrayList<Trail>[] trails;
+	protected boolean addedTrail = false;
+	protected double lastTrailAngle = -1;
 
-	public Bullet(double x, double y, int bounces, Tank t)
+	public double speed = 0;
+
+	public Bullet(double x, double y, int bounces, Tank t, ItemBullet item)
 	{
-		this(x, y, bounces, t, true, null);
-	}
-
-	/** Do not use, instead use the constructor with primitive data types. Intended for Item use only!*/
-	@Deprecated
-	public Bullet(Double x, Double y, Integer bounces, Tank t, ItemBullet ib)
-	{
-		this(x.doubleValue(), y.doubleValue(), bounces.intValue(), t, true, ib);
+		this(x, y, bounces, t, true, item);
 	}
 
 	public Bullet(double x, double y, int bounces, Tank t, boolean affectsMaxLiveBullets, ItemBullet item)
@@ -108,7 +111,7 @@ public class Bullet extends Movable implements IDrawable
 		this.baseColorG = t.colorG;
 		this.baseColorB = t.colorB;
 
-		double[] oc = Team.getObjectColor(t.turret.colorR, t.turret.colorG, t.turret.colorB, t);
+		double[] oc = Team.getObjectColor(t.secondaryColorR, t.secondaryColorG, t.secondaryColorB, t);
 		this.outlineColorR = oc[0];
 		this.outlineColorG = oc[1];
 		this.outlineColorB = oc[2];
@@ -118,7 +121,7 @@ public class Bullet extends Movable implements IDrawable
 		this.team = t.team;
 		this.name = bullet_name;
 
-		this.iPosZ = this.tank.size / 2 + this.tank.turret.size / 2;
+		this.iPosZ = this.tank.size / 2 + this.tank.turretSize / 2;
 
 		this.isRemote = t.isRemote;
 
@@ -128,12 +131,7 @@ public class Bullet extends Movable implements IDrawable
 		this.affectsMaxLiveBullets = affectsMaxLiveBullets;
 
 		if (!this.tank.isRemote && this.affectsMaxLiveBullets)
-		{
-			if (this.item == null)
-				t.liveBullets++;
-			else
-				this.item.liveBullets++;
-		}
+			this.item.liveBullets++;
 
 		for (AttributeModifier a: this.tank.attributes)
 		{
@@ -156,7 +154,7 @@ public class Bullet extends Movable implements IDrawable
 		this.trails = (ArrayList<Trail>[])(new ArrayList[10]);
 
 		for (int i = 0; i < this.trails.length; i++)
-			this.trails[i] = new ArrayList<Trail>();
+			this.trails[i] = new ArrayList<>();
 
 		if (!this.tank.isRemote)
 		{
@@ -172,6 +170,24 @@ public class Bullet extends Movable implements IDrawable
 		}
 
 		this.drawLevel = 8;
+
+		for (IFixedMenu m : ModAPI.menuGroup)
+		{
+			if (m instanceof Scoreboard)
+			{
+				if (((Scoreboard) m).objectiveType.equals(Scoreboard.objectiveTypes.shots_fired) ||
+						(((Scoreboard) m).objectiveType.equals(Scoreboard.objectiveTypes.shots_fired_no_multiple_fire)
+								&& !(this instanceof BulletHealing || this instanceof BulletFlame)))
+				{
+					if (((Scoreboard) m).players.isEmpty())
+						((Scoreboard) m).addTeamScore(this.team, 1);
+					else if (this.tank instanceof TankPlayer)
+						((Scoreboard) m).addPlayerScore(((TankPlayer) this.tank).player, 1);
+					else if (this.tank instanceof TankPlayerRemote)
+						((Scoreboard) m).addPlayerScore(((TankPlayerRemote) this.tank).player, 1);
+				}
+			}
+		}
 	}
 
 	public void moveOut(double amount)
@@ -209,12 +225,64 @@ public class Bullet extends Movable implements IDrawable
 				if (!this.heavy)
 					this.destroy = true;
 
+				if (Game.currentLevel instanceof ModLevel)
+				{
+					if (((ModLevel) Game.currentLevel).enableKillMessages && ScreenPartyHost.isServer)
+					{
+						String message = ((ModLevel) Game.currentLevel).generateKillMessage(t, this.tank, true);
+						ScreenPartyHost.chat.add(0, new ChatMessage(message));
+						Game.eventsOut.add(new EventChat(message));
+					}
+
+					for (IFixedMenu m : ModAPI.menuGroup)
+					{
+						if (m instanceof Scoreboard && ((Scoreboard) m).objectiveType.equals(Scoreboard.objectiveTypes.kills))
+						{
+							if (!((Scoreboard) m).teams.isEmpty())
+								((Scoreboard) m).addTeamScore(this.tank.team, 1);
+
+							else if (this.tank instanceof TankPlayer && !((Scoreboard) m).players.isEmpty())
+								((Scoreboard) m).addPlayerScore(((TankPlayer) this.tank).player, 1);
+
+							else if (this.tank instanceof TankPlayerRemote && !((Scoreboard) m).players.isEmpty())
+								((Scoreboard) m).addPlayerScore(((TankPlayerRemote) this.tank).player, 1);
+						}
+					}
+				}
+
 				if (this.tank.equals(Game.playerTank))
-					Game.player.hotbar.coins += t.coinValue;
+				{
+					if (Game.currentLevel instanceof ModLevel && (t instanceof TankPlayer || t instanceof TankPlayerRemote))
+						Game.player.hotbar.coins += ((ModLevel) Game.currentLevel).playerKillCoins;
+					else
+						Game.player.hotbar.coins += t.coinValue;
+				}
 				else if (this.tank instanceof TankPlayerRemote && Crusade.crusadeMode)
 				{
 					((TankPlayerRemote) this.tank).player.hotbar.coins += t.coinValue;
 					Game.eventsOut.add(new EventUpdateCoins(((TankPlayerRemote) this.tank).player));
+				}
+				else if ((Game.currentLevel.shop.size() > 0 || Game.currentLevel.startingItems.size() > 0) && !(t instanceof TankPlayer || t instanceof TankPlayerRemote))
+				{
+					if (this.tank instanceof TankPlayerRemote)
+					{
+						((TankPlayerRemote) this.tank).player.hotbar.coins += t.coinValue;
+						Game.eventsOut.add(new EventUpdateCoins(((TankPlayerRemote) this.tank).player));
+					}
+				}
+				else if (Game.currentLevel instanceof ModLevel && ((ModLevel) Game.currentLevel).playerKillCoins > 0)
+				{
+					if (this.tank instanceof TankPlayer)
+					{
+						((TankPlayer) this.tank).player.hotbar.coins += ((ModLevel) Game.currentLevel).playerKillCoins;
+						Game.eventsOut.add(new EventUpdateCoins(((TankPlayer) this.tank).player));
+					}
+
+					else if (this.tank instanceof TankPlayerRemote)
+					{
+						((TankPlayerRemote) this.tank).player.hotbar.coins += ((ModLevel) Game.currentLevel).playerKillCoins;
+						Game.eventsOut.add(new EventUpdateCoins(((TankPlayerRemote) this.tank).player));
+					}
 				}
 			}
 			else if (this.playPopSound)
@@ -315,7 +383,7 @@ public class Bullet extends Movable implements IDrawable
 			{
 				Obstacle o = Game.obstacles.get(i);
 
-				if (!o.bulletCollision && !o.checkForObjects)
+				if ((!o.bulletCollision && !o.checkForObjects) || o.startHeight > 1)
 					continue;
 
 				double dx = this.posX - o.posX;
@@ -465,7 +533,7 @@ public class Bullet extends Movable implements IDrawable
 					collidedWithTank = true;
 				}
 			}
-			else if ((o instanceof Bullet || o instanceof Mine) && o != this && !o.destroy && !(o instanceof BulletFlame || this instanceof BulletFlame))
+			else if (((o instanceof Bullet && ((Bullet) o).enableCollision && (((Bullet) o).bulletCollision && ((Bullet) o).externalBulletCollision && this.bulletCollision)) || o instanceof Mine) && o != this && !o.destroy)
 			{
 				double distSq = Math.pow(this.posX - o.posX, 2) + Math.pow(this.posY - o.posY, 2);
 
@@ -473,7 +541,7 @@ public class Bullet extends Movable implements IDrawable
 
 				if (o instanceof Mine)
 					s = ((Mine) o).size;
-				else if (o instanceof Bullet)
+				else
 					s = ((Bullet) o).size;
 
 				double bound = this.size / 2 + s / 2;
@@ -530,6 +598,9 @@ public class Bullet extends Movable implements IDrawable
 	@Override
 	public void update()
 	{
+		if (!this.isRemote && (this.vX != this.lastVX || this.lastVY != this.lastVY))
+			Game.eventsOut.add(new EventBulletUpdate(this));
+
 		super.update();
 
 		if (this.age == 0)
@@ -541,9 +612,8 @@ public class Bullet extends Movable implements IDrawable
 
 		boolean noTrails = true;
 
-		for (int j = 0; j < this.trails.length; j++)
+		for (ArrayList<Trail> trails : this.trails)
 		{
-			ArrayList<Trail> trails = this.trails[j];
 			double trailLength = 0;
 			for (int i = 0; i < trails.size(); i++)
 			{
@@ -577,16 +647,14 @@ public class Bullet extends Movable implements IDrawable
 
 				if (this.affectsMaxLiveBullets)
 				{
-					if (this.item == null)
-						this.tank.liveBullets--;
-					else
-						this.item.liveBullets--;
+					this.item.liveBullets--;
 				}
 
-				this.onDestroy();
+				if (!this.isRemote)
+					this.onDestroy();
 			}
 
-			if (this.destroyTimer <= 0 && Game.effectsEnabled && !(this instanceof BulletFlame))
+			if (this.destroyTimer <= 0 && Game.effectsEnabled)
 			{
 				this.addDestroyEffect();
 			}
@@ -702,6 +770,13 @@ public class Bullet extends Movable implements IDrawable
 			Game.removeMovables.add(this);
 		}
 
+		if (this.effect != BulletEffect.none && !this.addedTrail && !this.destroy && Movable.absoluteAngleBetween(this.getPolarDirection(), this.lastTrailAngle) >= 0.001)
+		{
+			this.addTrail(true);
+		}
+
+		this.addedTrail = false;
+
 		if (this.enableCollision)
 		{
 			if (!this.tank.isRemote)
@@ -715,42 +790,78 @@ public class Bullet extends Movable implements IDrawable
 
 	public void addTrail()
 	{
-		if (!Game.bulletTrails)
+		this.addTrail(false);
+	}
+
+	public void addTrail(boolean redirect)
+	{
+		this.addedTrail = true;
+
+		if (!Game.bulletTrails || this.effect == BulletEffect.none)
 			return;
 
-		double speed = Math.sqrt(this.vX * this.vX + this.vY * this.vY);
+		double speed = this.speed;
 
-		for (int i = 0; i < this.trails.length; i++)
+		double x = this.collisionX;
+		double y = this.collisionY;
+
+		if (redirect)
 		{
-			if (this.trails[i].size() > 0)
+			x = this.posX;
+			y = this.posY;
+		}
+
+		for (ArrayList<Trail> trail : this.trails)
+		{
+			if (trail.size() > 0)
 			{
-				Trail t = this.trails[i].get(0);
+				Trail t = trail.get(0);
 				t.spawning = false;
-				t.frontX = this.collisionX;
-				t.frontY = this.collisionY;
+				t.frontX = x;
+				t.frontY = y;
 			}
 		}
 
+		this.lastTrailAngle = this.getPolarDirection();
+
 		if (this.effect == BulletEffect.trail || this.effect == BulletEffect.fire || this.effect == BulletEffect.darkFire)
-			this.trails[0].add(0, new Trail(this, this.collisionX, this.collisionY, this.size / 2, this.size / 2, 15 * this.size * speed / 3.125, this.getPolarDirection(), 127, 127, 127, 100, 127, 127, 127, 0, false, 0.5));
+			this.addTrailObj(0, new Trail(this, this.speed, x, y, this.size / 2, this.size / 2, 15 * this.size * speed / 3.125, this.lastTrailAngle, 127, 127, 127, 100, 127, 127, 127, 0, false, 0.5), redirect);
 
 		if (this.effect == BulletEffect.fire || this.effect == BulletEffect.fireTrail)
-			this.trails[2].add(0, new Trail(this, this.collisionX, this.collisionY, this.size / 2 * 5, this.size / 2, 10 * this.size * speed / 6.25, this.getPolarDirection(), 255, 255, 0, 255, 255, 0, 0, 0, false, 1));
+			this.addTrailObj(2, new Trail(this, this.speed, x, y, this.size / 2 * 5, this.size / 2, 10 * this.size * speed / 6.25, this.lastTrailAngle, 255, 255, 0, 255, 255, 0, 0, 0, false, 1), redirect);
 
 		if (this.effect == BulletEffect.darkFire)
-			this.trails[2].add(0, new Trail(this, this.collisionX, this.collisionY, this.size / 2 * 5, this.size / 2, 10 * this.size * speed / 6.25, this.getPolarDirection(), 64, 0, 128, 255, 0, 0, 0, 0, false, 0.5));
+			this.addTrailObj(2, new Trail(this, this.speed, x, y, this.size / 2 * 5, this.size / 2, 10 * this.size * speed / 6.25, this.lastTrailAngle, 64, 0, 128, 255, 0, 0, 0, 0, false, 0.5), redirect);
 
 		if (this.effect == BulletEffect.fireTrail)
 		{
-			Trail t = new Trail(this, this.collisionX, this.collisionY, this.size, this.size, 100 * this.size * speed / 6.25, this.getPolarDirection(), 80, 80, 80, 100, 80, 80, 80, 0, false, 0.5);
+			Trail t = new Trail(this, this.speed, x, y, this.size, this.size, 100 * this.size * speed / 6.25, this.lastTrailAngle, 80, 80, 80, 100, 80, 80, 80, 0, false, 0.5);
 			t.delay = 14 * this.size * speed / 6.25;
 			t.frontCircle = false;
-			this.trails[0].add(0, t);
+			this.addTrailObj(0, t, redirect);
 
-			Trail t2 = new Trail(this, this.collisionX, this.collisionY, this.size, this.size, 8 * this.size * speed / 6.25, this.getPolarDirection(), 80, 80, 80, 0, 80, 80, 80, 100, false, 0.5);
+			Trail t2 = new Trail(this, this.speed, x, y, this.size, this.size, 8 * this.size * speed / 6.25, this.lastTrailAngle, 80, 80, 80, 0, 80, 80, 80, 100, false, 0.5);
 			t2.delay = 6 * this.size * speed / 6.25;
 			t2.backCircle = false;
-			this.trails[1].add(0, t2);
+			this.addTrailObj(1, t2, redirect);
+		}
+	}
+
+	protected void addTrailObj(int group, Trail t, boolean redirect)
+	{
+		Trail old = null;
+
+		if (this.trails[group].size() > 0)
+			old = this.trails[group].get(0);
+
+		this.trails[group].add(0, t);
+
+		if (redirect && old != null)
+		{
+			double angle = this.getPolarDirection();
+			double offset = Movable.angleBetween(angle, old.angle) / 2;
+			old.setFrontAngleOffset(offset);
+			t.setBackAngleOffset(-offset);
 		}
 	}
 
@@ -797,10 +908,12 @@ public class Bullet extends Movable implements IDrawable
 			}
 		}
 
-		for (int i = 0; i < this.trails.length; i++)
+		for (ArrayList<Trail> trail : this.trails)
 		{
-			for (Trail t: this.trails[i])
+			for (Trail t : trail)
+			{
 				t.draw();
+			}
 		}
 
 		if (this.destroyTimer < 60.0)

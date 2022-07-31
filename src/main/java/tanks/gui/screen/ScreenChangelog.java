@@ -21,13 +21,13 @@ public class ScreenChangelog extends Screen
         this.music = "menu_options.ogg";
         this.musicID = "menu";
 
-        this.next.image = "play.png";
+        this.next.image = "icons/forward.png";
         this.next.imageSizeX = 25;
         this.next.imageSizeY = 25;
         this.next.imageXOffset = 145;
 
-        this.previous.image = "play.png";
-        this.previous.imageSizeX = -25;
+        this.previous.image = "icons/back.png";
+        this.previous.imageSizeX = 25;
         this.previous.imageSizeY = 25;
         this.previous.imageXOffset = -145;
     }
@@ -167,7 +167,7 @@ public class ScreenChangelog extends Screen
                                     "Max level size increased\n" +
                                     "More variation in level generator\n\n" +
 
-                            "*Items:\n\n" +
+                                    "*Items:\n\n" +
                                     "New mine item\n" +
                                     "Add items and shops in individual levels\n" +
                                     "New item templates\n" +
@@ -195,7 +195,7 @@ public class ScreenChangelog extends Screen
                                     "Updated health indicators\n" +
                                     "Flashier 3D fireworks\n\n" +
 
-                            "*Audio:\n\n" +
+                                    "*Audio:\n\n" +
                                     "New volume controls\n" +
                                     "New songs for battle, crusade, and battle victory/defeat\n" +
                                     "New sound effects\n" +
@@ -219,7 +219,7 @@ public class ScreenChangelog extends Screen
                                     "New time limit option for levels\n" +
                                     "Added lighting options to levels",
 
-                                    "*Options:\n\n" +
+                            "*Options:\n\n" +
                                     "Added shadows and shadow quality option\n" +
                                     "Added option to show time elapsed\n" +
                                     "Added keybind to instantly start a level\n\n" +
@@ -260,7 +260,7 @@ public class ScreenChangelog extends Screen
                             "*What's new in Tanks v1.2.0:\n\n" +
                                     "*New features:\n\n" +
                                     "Added light pink tank which gets angry when it sees you\n" +
-                                    "Added mimic tank which mimics the behavior a nearby tank\n" +
+                                    "Added mimic tank which mimics the behavior of a nearby tank\n" +
                                     "Dummy tanks can be now used in the level editor\n" +
                                     "Added support for Steam peer-to-peer multiplayer\n" +
                                     "You can now override the game's default resources\n\n" +
@@ -272,7 +272,7 @@ public class ScreenChangelog extends Screen
                                     "Large timed levels have longer timers\n" +
                                     "Orangered tank is now immune to explosion damage\n\n",
 
-                                    "*More:\n\n" +
+                            "*More:\n\n" +
                                     "Improved the crusade editor level edit menu\n" +
                                     "Changed light block appearance\n" +
                                     "Fireworks are more varied and prettier!\n" +
@@ -308,7 +308,7 @@ public class ScreenChangelog extends Screen
                                     "Added indicator for where arc bullets will land\n" +
                                     "Added mini tank to level editor\n",
 
-                                    "*Improvements:\n\n" +
+                            "*Improvements:\n\n" +
                                     "Hovering over the item bar slots shows keybinds\n" +
                                     "Leaving and rejoining a party crusade before a new level is\n" +
                                     "    loaded recovers progress\n" +
@@ -317,6 +317,96 @@ public class ScreenChangelog extends Screen
                                     "Reworked the 'Save this level' button\n" +
                                     "You can now save levels you play in parties\n" +
                                     "Bug fixes and other minor improvements"
+                    });
+
+            new Changelog("v1.3.0", new String[]
+                    {
+                            "*What's new in Tanks v1.3.0:\n\n" +
+                                    "*New features:\n\n" +
+                                    "Added all-new castle crusade\n" +
+                                    "Added cut, copy, and paste to level editor\n" +
+                                    "Added multishot and shot spread options to bullets\n" +
+                                    "Added crusade option to disable respawning tanks\n\n" +
+
+                                    "*Sounds and music:\n\n" +
+                                    "Added individual battle music tracks for each tanks\n" +
+                                    "New editor music which changes based on tanks present\n" +
+                                    "New sounds for winning and losing battles",
+
+                            "*User interfaces:\n\n" +
+                                    "Improved lists with search, sort, and jump buttons\n" +
+                                    "New window options menu for resolution and fullscreen\n" +
+                                    "New option to warn before closing unsaved work\n" +
+                                    "New option to prevent mouse leaving the window bounds\n\n" +
+
+                                    "*Improvements:\n\n" +
+                                    "Cyan tanks are now immune to freeze bullets and ice\n" +
+                                    "Improved game title appearance\n" +
+                                    "Huge rendering improvements\n" +
+                                    "Added translation support\n" +
+                                    "Holes are now bigger\n" +
+                                    "More animations on the crusade stats screen\n" +
+                                    "Added native support for ARM64 (M1) architecture on Mac\n" +
+                                    "Bug fixes and other minor improvements"
+                    });
+
+            new Changelog("v1.3.1", new String[]
+                    {
+                            "*What's new in Tanks v1.3.1:\n\n" +
+                                    "Added maximum framerate option\n" +
+                                    "Scroll while holding the zoom key for manual zoom\n" +
+                                    "Added keybinds to manually zoom in and out\n" +
+                                    "Added automatic zoom mode with keybind\n" +
+                                    "Improved keybindings screen\n" +
+                                    "Bug fixes and other minor improvements\n"
+                    });
+
+            new Changelog("v1.3.2", new String[]
+                    {
+                            "*What's new in Tanks v1.3.2:\n\n" +
+                                    "Changed appearance of electric bullets\n" +
+                                    "Arc bullets can now be set to bounce\n" +
+                                    "Bug fixes and other minor improvements\n"
+                    });
+
+            new Changelog("v1.4.0", new String[]
+                    {
+                            "*What's new in Tanks v1.4.0:\n\n" +
+                                    "*New features:\n\n" +
+                                    "Added tank editor and custom tanks\n" +
+                                    "Added air bullet which pushes things\n" +
+                                    "Added homing bullet which moves towards targets\n" +
+                                    "Added light blue tank which uses air bullets\n" +
+                                    "Added salmon tank which uses homing bullets\n" +
+                                    "Added beginner crusade\n\n" +
+
+                                    "*Tank behavior:\n\n" +
+                                    "Tanks now try to avoid walls\n" +
+                                    "Tanks now see through destructible blocks\n" +
+                                    "Tanks now avoid explosive blocks",
+
+                                    "*Balancing:\n\n" +
+                                    "Boss tank now only spawns 5 tank types\n" +
+                                    "Cooldowns are now per item\n" +
+                                    "Made random level teleporters rarer\n" +
+                                    "Increased player tank acceleration\n" +
+                                    "Nerfed castle crusade level 'Castle artillery'\n\n" +
+
+                                    "*Graphics:\n\n" +
+                                    "New tank textures and models\n" +
+                                    "Updated crusade info and stats screen background\n" +
+                                    "Updated item icons\n" +
+                                    "Made UI icons more colorful\n" +
+                                    "Updated 3D explosion particle effect\n" +
+                                    "Added indicator when new shop items are available\n" +
+                                    "Added bullet cooldown indicator to hotbar",
+
+                                    "*More:\n\n" +
+                                    "New editor music\n" +
+                                    "Shop is now available in versus mode\n" +
+                                    "Increased some textbox character limits\n" +
+                                    "IP address can now be hidden in parties\n\n" +
+                                    "Bug fixes and other minor improvements\n"
                     });
         }
     }

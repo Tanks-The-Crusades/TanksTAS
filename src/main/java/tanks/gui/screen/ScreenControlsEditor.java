@@ -8,7 +8,7 @@ import tanks.gui.InputSelector;
 public class ScreenControlsEditor extends Screen
 {
     public static int page = 0;
-    public static final int page_count = 5;
+    public static final int page_count = 6;
 
     InputSelector pause = new InputSelector(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 225, 700, 40, "Editor menu", Game.game.input.editorPause);
     InputSelector objectMenu = new InputSelector(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 135, 700, 40, "Object menu", Game.game.input.editorObjectMenu);
@@ -44,24 +44,14 @@ public class ScreenControlsEditor extends Screen
     InputSelector lockSquare = new InputSelector(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 45, 700, 40, "Toggle square selection", Game.game.input.editorLockSquare);
     InputSelector toggleAdd = new InputSelector(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 + 135, 700, 40, "Toggle remove from selection", Game.game.input.editorSelectAddToggle);
 
-    Button next = new Button(Drawing.drawing.interfaceSizeX * 2 / 3 + 190, Drawing.drawing.interfaceSizeY / 2 + 350, this.objWidth, this.objHeight, "Next page", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            page++;
-        }
-    }
+    InputSelector copy = new InputSelector(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 225, 700, 40, "Copy", Game.game.input.editorCopy);
+    InputSelector cut = new InputSelector(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 135, 700, 40, "Cut", Game.game.input.editorCut);
+    InputSelector paste = new InputSelector(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 45, 700, 40, "Paste", Game.game.input.editorPaste);
+
+    Button next = new Button(Drawing.drawing.interfaceSizeX * 2 / 3 + 190, Drawing.drawing.interfaceSizeY / 2 + 350, this.objWidth, this.objHeight, "Next page", () -> page++
     );
 
-    Button previous = new Button(Drawing.drawing.interfaceSizeX * 2 / 3 - 190, Drawing.drawing.interfaceSizeY / 2 + 350, this.objWidth, this.objHeight, "Previous page", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            page--;
-        }
-    }
+    Button previous = new Button(Drawing.drawing.interfaceSizeX * 2 / 3 - 190, Drawing.drawing.interfaceSizeY / 2 + 350, this.objWidth, this.objHeight, "Previous page", () -> page--
     );
 
     public ScreenControlsEditor()
@@ -72,13 +62,13 @@ public class ScreenControlsEditor extends Screen
         next.enabled = page < page_count - 1;
         previous.enabled = page > 0;
 
-        this.next.image = "play.png";
+        this.next.image = "icons/forward.png";
         this.next.imageSizeX = 25;
         this.next.imageSizeY = 25;
         this.next.imageXOffset = 145;
 
-        this.previous.image = "play.png";
-        this.previous.imageSizeX = -25;
+        this.previous.image = "icons/back.png";
+        this.previous.imageSizeX = 25;
         this.previous.imageSizeY = 25;
         this.previous.imageXOffset = -145;
     }
@@ -129,6 +119,12 @@ public class ScreenControlsEditor extends Screen
             holdSquare.update();
             lockSquare.update();
             toggleAdd.update();
+        }
+        else if (page == 5)
+        {
+            copy.update();
+            cut.update();
+            paste.update();
         }
 
         next.enabled = page < page_count - 1;
@@ -190,15 +186,21 @@ public class ScreenControlsEditor extends Screen
             deselect.draw();
             select.draw();
         }
+        else if (page == 5)
+        {
+            copy.draw();
+            cut.draw();
+            paste.draw();
+        }
 
         next.draw();
         previous.draw();
 
         Drawing.drawing.setInterfaceFontSize(this.textSize);
         Drawing.drawing.setColor(0, 0, 0);
-        Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 + 310, "Page " + (page + 1) + " of " + page_count);
+        Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 + 310, "Page %d of %d", (page + 1), page_count);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 350, "Editor controls");
+        Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX * 2 / 3, Drawing.drawing.interfaceSizeY / 2 - 350, "Editor controls");
 
         ScreenOptionsInputDesktop.overlay.draw();
     }

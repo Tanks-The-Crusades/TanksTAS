@@ -6,6 +6,8 @@ import tanks.event.*;
 import tanks.event.online.*;
 import tanks.extension.Extension;
 import tanks.extension.ExtensionRegistry;
+import tanks.generator.LevelGenerator;
+import tanks.generator.LevelGeneratorRandom;
 import tanks.gui.Button;
 import tanks.gui.ChatFilter;
 import tanks.gui.input.InputBindingGroup;
@@ -21,16 +23,11 @@ import tanks.network.NetworkEventMap;
 import tanks.network.SteamNetworkHandler;
 import tanks.network.SynchronizedList;
 import tanks.obstacle.*;
-import tanks.registry.RegistryBullet;
-import tanks.registry.RegistryItem;
-import tanks.registry.RegistryObstacle;
-import tanks.registry.RegistryTank;
+import tanks.registry.*;
 import tanks.tank.*;
+import tanks.translation.Translation;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.*;
 
 public class Game
@@ -45,28 +42,36 @@ public class Game
 
 	public static final int absoluteDepthBase = 1000;
 
-	public static ArrayList<Face> horizontalFaces = new ArrayList<Face>();
-	public static ArrayList<Face> verticalFaces = new ArrayList<Face>();
+	public static ArrayList<Face> horizontalFaces = new ArrayList<>();
+	public static ArrayList<Face> verticalFaces = new ArrayList<>();
 
 	public boolean[][] solidGrid;
+	public boolean[][] unbreakableGrid;
 	public double[][] heightGrid;
+	public double[][] groundHeightGrid;
 
-	public static ArrayList<Movable> movables = new ArrayList<Movable>();
-	public static ArrayList<Obstacle> obstacles = new ArrayList<Obstacle>();
-	public static ArrayList<Effect> effects = new ArrayList<Effect>();
-	public static ArrayList<Effect> tracks = new ArrayList<Effect>();
-	public static SynchronizedList<Player> players = new SynchronizedList<Player>();
+	public double[][] lastHeightGrid;
+
+	public static ArrayList<Movable> movables = new ArrayList<>();
+	public static ArrayList<Obstacle> obstacles = new ArrayList<>();
+	public static ArrayList<Effect> effects = new ArrayList<>();
+	public static ArrayList<Effect> tracks = new ArrayList<>();
+	public static ArrayList<Cloud> clouds = new ArrayList<>();
+	public static SynchronizedList<Player> players = new SynchronizedList<>();
 	public static Player player;
 
-	public static ArrayList<Movable> removeMovables = new ArrayList<Movable>();
-	public static ArrayList<Obstacle> removeObstacles = new ArrayList<Obstacle>();
-	public static ArrayList<Effect> removeEffects = new ArrayList<Effect>();
-	public static ArrayList<Effect> removeTracks = new ArrayList<Effect>();
+	public static HashSet<Obstacle> prevObstacles = new HashSet<>();
 
-	public static Queue<Effect> recycleEffects = new LinkedList<Effect>();
+	public static ArrayList<Movable> removeMovables = new ArrayList<>();
+	public static ArrayList<Obstacle> removeObstacles = new ArrayList<>();
+	public static ArrayList<Effect> removeEffects = new ArrayList<>();
+	public static ArrayList<Effect> removeTracks = new ArrayList<>();
+	public static ArrayList<Cloud> removeClouds = new ArrayList<>();
 
-	public static final SynchronizedList<INetworkEvent> eventsOut = new SynchronizedList<INetworkEvent>();
-	public static final SynchronizedList<INetworkEvent> eventsIn = new SynchronizedList<INetworkEvent>();
+	public static Queue<Effect> recycleEffects = new LinkedList<>();
+
+	public static final SynchronizedList<INetworkEvent> eventsOut = new SynchronizedList<>();
+	public static final SynchronizedList<INetworkEvent> eventsIn = new SynchronizedList<>();
 
 	public static Team playerTeam = new Team("ally");
 	public static Team enemyTeam = new Team("enemy");
@@ -74,8 +79,8 @@ public class Game
 	public static Team playerTeamNoFF = new Team("ally", false);
 	public static Team enemyTeamNoFF = new Team("enemy", false);
 
-	// Use this if you want to spawn a mine not allied with any tank, or such
-	public static Tank dummyTank = new TankDummy("dummy",0, 0, 0);
+	/** Use this if you want to spawn a mine not allied with any tank, or such*/
+	public static Tank dummyTank;
 
 	public static int currentSizeX = 28;
 	public static int currentSizeY = 18;
@@ -90,8 +95,8 @@ public class Game
 	public static double[][] tilesDepth = new double[28][18];
 
 	//Remember to change the version in android's build.gradle and ios's robovm.properties
-	public static final String version = "Tanks v1.2.2";
-	public static final int network_protocol = 36;
+	public static final String version = "Tanks v1.4.0";
+	public static final int network_protocol = 46;
 	public static boolean debug = false;
 	public static boolean traceAllRays = false;
 	public static final boolean cinematic = false;
@@ -102,6 +107,7 @@ public class Game
 
 	public static String lastParty = "";
 	public static String lastOnlineServer = "";
+	public static boolean showIP = true;
 
 	public static double levelSize = 1;
 
@@ -110,6 +116,7 @@ public class Game
 	public static boolean bulletLocked = false;
 
 	public static boolean vsync = true;
+	public static int maxFPS = 0;
 
 	public static boolean enable3d = true;
 	public static boolean enable3dBg = true;
@@ -117,6 +124,8 @@ public class Game
 
 	public static boolean followingCam = false;
 	public static boolean firstPerson = false;
+
+	public static boolean tankTextures = true;
 
 	public static boolean soundsEnabled = true;
 	public static boolean musicEnabled = true;
@@ -128,17 +137,25 @@ public class Game
 	public static boolean enableChatFilter = true;
 	public static boolean showSpeedrunTimer = false;
 
+	public static boolean previewCrusades = true;
+
 	public static boolean deterministicMode = false;
 	public static int seed = 0;
 
-	public static String crashMessage = "Yay! The game hasn't crashed yet!";
-	public static String crashLine = "Yay! The game hasn't crashed yet!";
+	public static boolean warnBeforeClosing = true;
+
+	public static String crashMessage = "Why would this game ever even crash anyway?";
+	public static String crashLine = "What, did you think I was a bad programmer? smh";
 
 	public static long crashTime = 0;
+
+	//public static boolean autoMinimapEnabled = true;
+	//public static float defaultZoom = 1.5f;
 
     public static double[] color = new double[3];
 
     public static Screen screen;
+	public static Screen prevScreen;
 
 	public static String ip = "";
 
@@ -156,7 +173,9 @@ public class Game
 	public static boolean autostart = true;
 	public static boolean autoReady = false;
 	public static double startTime = 400;
-	public static boolean fullStats = false;
+	public static boolean fullStats = true;
+
+	public static boolean constrainMouse = false;
 
 	public static double partyStartTime = 400;
 	public static boolean disablePartyFriendlyFire = false;
@@ -167,6 +186,8 @@ public class Game
 	public static RegistryBullet registryBullet = new RegistryBullet();
 	public static RegistryObstacle registryObstacle = new RegistryObstacle();
 	public static RegistryItem registryItem = new RegistryItem();
+	public static RegistryGenerator registryGenerator = new RegistryGenerator();
+	public static RegistryModelTank registryModelTank = new RegistryModelTank();
 
 	public static boolean enableExtensions = false;
 	public static boolean autoLoadExtensions = true;
@@ -181,6 +202,8 @@ public class Game
 
 	public static Level currentLevel = null;
 	public static String currentLevelString = "";
+
+	public static LevelGenerator lastGenerator = null;
 
 	public static ChatFilter chatFilter = new ChatFilter();
 
@@ -198,13 +221,16 @@ public class Game
 	public static final String tutorialPath = directoryPath + "/tutorial.txt";
 	public static final String uuidPath = directoryPath + "/uuid";
 	public static final String levelDir = directoryPath + "/levels";
+	//public static final String modLevelDir = directoryPath + "/modlevels/";
 	public static final String crusadeDir = directoryPath + "/crusades";
 	public static final String savedCrusadePath = directoryPath + "/crusades/progress/";
 	public static final String itemDir = directoryPath + "/items";
+	public static final String tankDir = directoryPath + "/tanks";
 	public static final String extensionDir = directoryPath + "/extensions/";
 	public static final String crashesPath = directoryPath + "/crashes/";
 
 	public static final String resourcesPath = directoryPath + "/resources/";
+	public static final String languagesPath = resourcesPath + "languages/";
 
 	public static float soundVolume = 1f;
 	public static float musicVolume = 0.5f;
@@ -227,12 +253,10 @@ public class Game
 	{
 		Game.game = this;
 		input = new InputBindings();
-		dummyTank.networkID = -1;
 	}
 
 	public static void registerEvents()
 	{
-		System.out.println(Integer.MIN_VALUE + (Integer.MAX_VALUE - 2));
 		NetworkEventMap.register(EventSendClientDetails.class);
 		NetworkEventMap.register(EventPing.class);
 		NetworkEventMap.register(EventConnectionSuccess.class);
@@ -242,6 +266,7 @@ public class Game
 		NetworkEventMap.register(EventPlayerChat.class);
 		NetworkEventMap.register(EventLoadLevel.class);
 		NetworkEventMap.register(EventEnterLevel.class);
+		NetworkEventMap.register(EventLevelEndQuick.class);
 		NetworkEventMap.register(EventLevelEnd.class);
 		NetworkEventMap.register(EventReturnToLobby.class);
 		NetworkEventMap.register(EventBeginCrusade.class);
@@ -266,24 +291,29 @@ public class Game
 		NetworkEventMap.register(EventTankControllerUpdateS.class);
 		NetworkEventMap.register(EventTankControllerUpdateC.class);
 		NetworkEventMap.register(EventTankControllerUpdateAmmunition.class);
+		NetworkEventMap.register(EventTankControllerAddVelocity.class);
 		NetworkEventMap.register(EventCreatePlayer.class);
 		NetworkEventMap.register(EventCreateTank.class);
 		NetworkEventMap.register(EventCreateCustomTank.class);
 		NetworkEventMap.register(EventTankUpdateHealth.class);
+		NetworkEventMap.register(EventRemoveTank.class);
 		NetworkEventMap.register(EventShootBullet.class);
 		NetworkEventMap.register(EventBulletBounce.class);
+		NetworkEventMap.register(EventBulletUpdate.class);
 		NetworkEventMap.register(EventBulletDestroyed.class);
 		NetworkEventMap.register(EventBulletInstantWaypoint.class);
 		NetworkEventMap.register(EventBulletAddAttributeModifier.class);
 		NetworkEventMap.register(EventBulletElectricStunEffect.class);
+		NetworkEventMap.register(EventBulletUpdateTarget.class);
 		NetworkEventMap.register(EventLayMine.class);
 		NetworkEventMap.register(EventMineExplode.class);
 		NetworkEventMap.register(EventMineChangeTimer.class);
+		NetworkEventMap.register(EventExplosion.class);
 		NetworkEventMap.register(EventTankTeleport.class);
 		NetworkEventMap.register(EventTankUpdateVisibility.class);
 		NetworkEventMap.register(EventTankUpdateColor.class);
-		NetworkEventMap.register(EventTankRedUpdateCharge.class);
-		NetworkEventMap.register(EventTankLightPinkAngry.class);
+		NetworkEventMap.register(EventTankTransform.class);
+		NetworkEventMap.register(EventTankCharge.class);
 		NetworkEventMap.register(EventTankMimicTransform.class);
 		NetworkEventMap.register(EventTankMimicLaser.class);
 		NetworkEventMap.register(EventTankAddAttributeModifier.class);
@@ -349,25 +379,38 @@ public class Game
 		new RegistryItem.ItemEntry(Game.registryItem, item, name, image);
 	}
 
+	public static void registerGenerator(Class<? extends LevelGenerator> generator, String name)
+	{
+		try
+		{
+			Game.registryGenerator.generators.put(name, generator.getConstructor().newInstance());
+		}
+		catch (Exception e)
+		{
+			Game.exitToCrash(e);
+		}
+	}
+
+	public static void registerTankModel(String dir)
+	{
+		Game.registryModelTank.registerFullModel(dir);
+	}
+
+	public static void registerTankEmblem(String dir)
+	{
+		Game.registryModelTank.tankEmblems.add(new RegistryModelTank.TankModelEntry("emblems/" + dir));
+	}
+
 	public static void initScript()
 	{
 		player = new Player(clientID, "");
 		Game.players.add(player);
 
-		dummyTank.team = null;
-
 		Drawing.initialize();
 		Panel.initialize();
 		Game.exitToTitle();
 
-		Hotbar.toggle = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 20, 150, 40, "", new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				Game.player.hotbar.persistent = !Game.player.hotbar.persistent;
-			}
-		}
+		Hotbar.toggle = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 20, 150, 40, "", () -> Game.player.hotbar.persistent = !Game.player.hotbar.persistent
 		);
 
 		steamNetworkHandler = new SteamNetworkHandler();
@@ -413,8 +456,10 @@ public class Game
 		registerTank(TankDarkGreen.class, "darkgreen", 1.0 / 10);
 		registerTank(TankBlack.class, "black", 1.0 / 10);
 		registerTank(TankMimic.class, "mimic", 1.0 / 4);
+		registerTank(TankLightBlue.class, "lightblue", 1.0 / 8);
 		registerTank(TankPink.class, "pink", 1.0 / 12);
 		registerTank(TankMini.class, "mini", 0);
+		registerTank(TankSalmon.class, "salmon", 1.0 / 10);
 		registerTank(TankLightPink.class, "lightpink", 1.0 / 10);
 		registerTank(TankBoss.class, "boss", 1.0 / 40, true);
 
@@ -427,13 +472,15 @@ public class Game
 		registerBullet(BulletArc.class, BulletArc.bullet_name, "bullet_arc.png");
 		registerBullet(BulletExplosive.class, BulletExplosive.bullet_name, "bullet_explosive.png");
 		registerBullet(BulletBoost.class, BulletBoost.bullet_name, "bullet_boost.png");
+		registerBullet(BulletAir.class, BulletAir.bullet_name, "bullet_air.png");
+		registerBullet(BulletHoming.class, BulletHoming.bullet_name, "bullet_homing.png");
 
 		registerItem(ItemBullet.class, ItemBullet.item_name, "bullet_normal.png");
 		registerItem(ItemMine.class, ItemMine.item_name, "mine.png");
 		registerItem(ItemShield.class, ItemShield.item_name, "shield.png");
 
-		TankPlayer.default_bullet = Item.parseItem(null, "Basic bullet,bullet_normal.png,1,0,1,100,bullet,normal,trail,3.125,1,1.0,5,20.0,10.0,1.0,false");
-		TankPlayer.default_mine = Item.parseItem(null, "Basic mine,mine.png,1,0,1,100,mine,1000.0,50.0,125.0,2.0,2,50.0,30.0,true");
+		TankPlayer.default_bullet = (ItemBullet) Item.parseItem(null, Translation.translate("Basic bullet") + ",bullet_normal.png,1,0,1,100,bullet,normal,trail,3.125,1,1.0,5,20.0,10.0,1.0,false");
+		TankPlayer.default_mine = (ItemMine) Item.parseItem(null, Translation.translate("Basic mine") + ",mine.png,1,0,1,100,mine,1000.0,50.0,125.0,2.0,2,50.0,30.0,true");
 
 		homedir = System.getProperty("user.home");
 
@@ -484,6 +531,12 @@ public class Game
 		if (!itemsFile.exists())
 		{
 			itemsFile.mkdirs();
+		}
+
+		BaseFile tanksFile = game.fileManager.getFile(homedir + tankDir);
+		if (!tanksFile.exists())
+		{
+			tanksFile.mkdirs();
 		}
 
 		BaseFile extensionsFile = game.fileManager.getFile(homedir + extensionDir);
@@ -577,15 +630,7 @@ public class Game
 		Tank.health_model = Drawing.drawing.createModel();
 		Drawing.rotatedRect = Drawing.drawing.createModel();
 
-		Tank.base_model = Drawing.drawing.createModel("/models/tank/base/");
-		Tank.color_model = Drawing.drawing.createModel("/models/tank/color/");
-		Turret.base_model = Drawing.drawing.createModel("/models/tank/turretbase/");
-		Turret.turret_model = Drawing.drawing.createModel("/models/tank/turret/");
-
-		TankMimic.base_model = Drawing.drawing.createModel("/models/tankmimic/base/");
-		TankMimic.color_model = Drawing.drawing.createModel("/models/tankmimic/color/");
-		TankMimic.turret_model = Drawing.drawing.createModel("/models/tankmimic/turret/");
-		TankMimic.turret_base_model = Drawing.drawing.createModel("/models/tankmimic/turretbase/");
+		TankModels.initialize();
 
 		Drawing.rotatedRect.shapes = new ModelPart.Shape[1];
 		Drawing.rotatedRect.shapes[0] = new ModelPart.Quad(
@@ -687,7 +732,7 @@ public class Game
 
 	public static boolean usernameInvalid(String username)
 	{
-		if (username.length() > 18)
+		if (username.length() > 20)
 			return true;
 
 		for (int i = 0; i < username.length(); i++)
@@ -742,50 +787,15 @@ public class Game
 			return Character.toUpperCase(s.charAt(0)) + s.substring(1).replace("-", " ").replace("_", " ").toLowerCase();
 	}
 
-	public static void reset()
+	public static void exitToInterlevel()
 	{
-		resetNetworkIDs();
-
-		obstacles.clear();
-		tracks.clear();
-		movables.clear();
-		effects.clear();
-		recycleEffects.clear();
-		removeEffects.clear();
-		removeTracks.clear();
-
-		System.gc();
-		start();
-	}
-
-	public static void exit()
-	{
+		silentCleanUp();
 		screen = new ScreenInterlevel();
-
-		resetNetworkIDs();
-
-		obstacles.clear();
-		tracks.clear();
-		movables.clear();
-		effects.clear();
-		recycleEffects.clear();
-		removeEffects.clear();
-		removeTracks.clear();
-
-		System.gc();
 	}
 
-	public static void exit(String name)
+	public static void exitToEditor(String name)
 	{
-		obstacles.clear();
-		tracks.clear();
-		movables.clear();
-		effects.clear();
-		recycleEffects.clear();
-		removeEffects.clear();
-		removeTracks.clear();
-
-		System.gc();
+		silentCleanUp();
 
 		ScreenLevelEditor s = new ScreenLevelEditor(name, Game.currentLevel);
 		Game.loadLevel(game.fileManager.getFile(Game.homedir + levelDir + "/" + name), s);
@@ -813,12 +823,7 @@ public class Game
 		ScreenPartyHost.isServer = false;
 		ScreenPartyLobby.isClient = false;
 
-		obstacles.clear();
-		tracks.clear();
-		movables.clear();
-		effects.clear();
-		eventsIn.clear();
-		eventsOut.clear();
+		cleanUp();
 
 		Game.crashMessage = e.toString();
 		Game.crashLine = "Unable to locate crash line. Please check the crash report for more info.";
@@ -885,12 +890,6 @@ public class Game
 			e1.printStackTrace();
 		}
 
-		recycleEffects.clear();
-		removeEffects.clear();
-		removeTracks.clear();
-
-		System.gc();
-
 		Drawing.drawing.playSound("leave.ogg");
 	}
 
@@ -903,23 +902,32 @@ public class Game
 		Game.tilesB = new double[28][18];
 		Game.tilesDepth = new double[28][18];
 		Game.game.heightGrid = new double[28][18];
-		//Game.game.shadeGrid = new double[28][18];
+		Game.game.groundHeightGrid = new double[28][18];
 		Game.tileDrawables = new Obstacle[28][18];
+
+		double var = 0;
+
+		if (Game.fancyTerrain)
+			var = 20;
 
 		for (int i = 0; i < 28; i++)
 		{
 			for (int j = 0; j < 18; j++)
 			{
-				Game.tilesR[i][j] = (255 - Math.random() * 20);
-				Game.tilesG[i][j] = (227 - Math.random() * 20);
-				Game.tilesB[i][j] = (186 - Math.random() * 20);
-				Game.tilesDepth[i][j] = Math.random() * 10;
+				Game.tilesR[i][j] = (235 + Math.random() * var);
+				Game.tilesG[i][j] = (207 + Math.random() * var);
+				Game.tilesB[i][j] = (166 + Math.random() * var);
+				Game.tilesDepth[i][j] = Math.random() * var / 2;
 			}
 		}
 
 		Level.currentColorR = 235;
 		Level.currentColorG = 207;
 		Level.currentColorB = 166;
+
+		Level.currentColorVarR = 20;
+		Level.currentColorVarG = 20;
+		Level.currentColorVarB = 20;
 
 		Level.currentLightIntensity = 1.0;
 		Level.currentShadowIntensity = 0.75;
@@ -930,10 +938,30 @@ public class Game
 		int x = (int) (px / Game.tile_size);
 		int y = (int) (py / Game.tile_size);
 
-		if (!Game.fancyTerrain || !Game.enable3d || x < 0 || x >= Game.currentSizeX || y < 0 || y >= Game.currentSizeY)
+		if (!Game.enable3dBg || !Game.enable3d || x < 0 || x >= Game.currentSizeX || y < 0 || y >= Game.currentSizeY)
 			return 0;
 		else
 			return Game.tilesDepth[x][y] + 0;
+	}
+
+	public static double sampleTerrainGroundHeight(double px, double py)
+	{
+		int x = (int) (px / Game.tile_size);
+		int y = (int) (py / Game.tile_size);
+
+		if (px < 0)
+			x--;
+
+		if (py < 0)
+			y--;
+
+		double r;
+		if (!Game.fancyTerrain || !Game.enable3d || x < 0 || x >= Game.currentSizeX || y < 0 || y >= Game.currentSizeY)
+			r = 0;
+		else
+			r = Game.game.groundHeightGrid[x][y];
+
+		return r;
 	}
 
 	public static double sampleObstacleHeight(double px, double py)
@@ -965,6 +993,42 @@ public class Game
 			return false;
 
 		return a.equals(b);
+	}
+
+	public static void loadTankMusic()
+	{
+		ArrayList<String> music = Game.game.fileManager.getInternalFileContents("/music/tank/tank_music.txt");
+
+		HashSet<String> loadedMusics = new HashSet<>();
+		for (String s: music)
+		{
+			String[] sections = s.split("=");
+
+			if (sections.length < 2)
+				continue;
+
+			String tank = sections[0];
+			String[] musics = sections[1].split(",");
+
+			for (String track: musics)
+			{
+				if (!loadedMusics.contains(track))
+				{
+					Game.game.window.soundPlayer.loadMusic("/music/" + track);
+					loadedMusics.add(track);
+				}
+
+				registerTankMusic(tank, track);
+			}
+		}
+	}
+
+	public static void registerTankMusic(String tank, String track)
+	{
+		if (!Game.registryTank.tankMusics.containsKey(tank))
+			Game.registryTank.tankMusics.put(tank, new ArrayList<>());
+
+		Game.registryTank.tankMusics.get(tank).add(track);
 	}
 
 	public static double[] getRainbowColor(double fraction)
@@ -1038,9 +1102,11 @@ public class Game
 		tracks.clear();
 		movables.clear();
 		effects.clear();
+		clouds.clear();
 		recycleEffects.clear();
 		removeEffects.clear();
 		removeTracks.clear();
+		removeClouds.clear();
 
 		resetNetworkIDs();
 
@@ -1048,6 +1114,9 @@ public class Game
 		Game.player.hotbar.enabledCoins = false;
 		Game.player.hotbar.itemBar = new ItemBar(Game.player);
 		Game.player.hotbar.enabledItemBar = false;
+
+		//if (Game.game.window != null)
+		//	Game.game.window.setShowCursor(false);
 	}
 
 	public static void resetNetworkIDs()
@@ -1113,8 +1182,8 @@ public class Game
 
 			StringBuilder na = new StringBuilder("0");
 			StringBuilder nb = new StringBuilder("0");
-			StringBuilder la = new StringBuilder("");
-			StringBuilder lb = new StringBuilder("");
+			StringBuilder la = new StringBuilder();
+			StringBuilder lb = new StringBuilder();
 
 			for (int j = 0; j < a1.length(); j++)
 			{
@@ -1148,14 +1217,19 @@ public class Game
 		return 0;
 	}
 
-	public static void start()
+	public static void loadRandomLevel()
+	{
+		loadRandomLevel(-1);
+	}
+
+	public static void loadRandomLevel(int seed)
 	{
 		//Level level = new Level("{28,18|4...11-6,11-0...5,17...27-6,16-3...6,0...10-11,11-11...14,16...23-11,16-12...17|3-15-player,7-3-purple2-2,20-14-green,22-3-green-2,8-8.5-brown,19-8.5-mint-2,13.5-5-yellow-1}");
 		//Level level = new Level("{28,18|4...11-6,11-0...5,17...27-6,16-3...6,0...10-11,11-11...14,16...23-11,16-12...17|3-15-player,7-3-green-2,20-14-green,22-3-green-2,8-8.5-green,19-8.5-green-2,13.5-5-green-1}");
 
 		//System.out.println(LevelGenerator.generateLevelString());
 		//Game.currentLevel = "{28,18|0-17,1-16,2-15,3-14,4-13,5-12,6-11,7-10,10-7,12-5,15-2,16-1,17-0,27-0,26-1,25-2,24-3,23-4,22-5,21-6,20-7,17-10,15-12,12-15,11-16,10-17,27-17,26-16,25-15,24-14,23-13,22-12,21-11,20-10,17-7,15-5,12-2,11-1,10-0,0-0,1-1,3-3,2-2,4-4,5-5,6-6,7-7,10-10,12-12,15-15,16-16,17-17,11-11,16-11,16-6,11-6|0-8-player-0,13-8-magenta-1,14-9-magenta-3,12-10-yellow-0,15-7-yellow-2,13-0-mint-1,14-17-mint-3,27-8-mint-2,27-9-mint-2}";///LevelGenerator.generateLevelString();
-		Level level = new Level(LevelGenerator.generateLevelString());
+		Level level = new Level(LevelGeneratorRandom.generateLevelString(seed));
 		//Level level = new Level("{28,18|3...6-3...4,3...4-5...6,10...19-13...14,18...19-4...12|22-14-player,14-10-brown}");
 		//Level level = new Level("{28,18|0...27-9,0...27-7|2-8-player,26-8-purple2-2}");
 		level.loadLevel();

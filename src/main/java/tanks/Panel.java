@@ -6,11 +6,15 @@ import basewindow.transformation.Translation;
 import tanks.event.EventBeginLevelCountdown;
 import tanks.event.online.IOnlineServerEvent;
 import tanks.extension.Extension;
+import tanks.gui.Firework;
+import tanks.gui.IFixedMenu;
 import tanks.gui.TextBox;
 import tanks.gui.screen.*;
+import tanks.gui.screen.leveleditor.ScreenLevelEditor;
 import tanks.hotbar.Hotbar;
 import tanks.network.Client;
 import tanks.network.ClientHandler;
+import tanks.obstacle.Obstacle;
 import tanks.tank.*;
 
 import java.util.ArrayList;
@@ -21,9 +25,15 @@ public class Panel
 	public static boolean onlinePaused;
 
 	public double zoomTimer = 0;
+	public static double zoomTarget = -1;
+	public static boolean autoZoom = true;
+	public static double lastAutoZoomSpeed = 0;
 
 	public static double windowWidth = 1400;
 	public static double windowHeight = 900;
+
+	public final long splash_duration = 0;
+	public boolean playedTutorialIntroMusic = false;
 
 	public static boolean showMouseTarget = true;
 
@@ -68,6 +78,8 @@ public class Panel
 
 	public boolean firstFrame = true;
 	public boolean firstDraw = true;
+	public boolean introFinished = false;
+	public boolean splashFinished = false;
 
 	public boolean startMusicPlayed = false;
 
@@ -81,6 +93,7 @@ public class Panel
 	public long ageFrames = 0;
 
 	public boolean started = false;
+	public boolean settingUp = true;
 
     public static boolean lagFrame = false;
 
@@ -99,12 +112,18 @@ public class Panel
 
 	public void setUp()
 	{
+		Drawing.drawing.defaultRenderer = new Drawing.LevelRenderer();
+		Drawing.drawing.terrainRenderer = Drawing.drawing.defaultRenderer.terrainRenderer;
+		Drawing.drawing.terrainRendererTransparent = Drawing.drawing.defaultRenderer.terrainRendererTransparent;
+		Drawing.drawing.terrainRendererShrubbery = Drawing.drawing.defaultRenderer.terrainRendererShrubbery;
+
+		ModAPI.setUp();
+
+		Game.resetTiles();
+
 		if (Game.game.fullscreen)
 			Game.game.window.setFullscreen(Game.game.fullscreen);
 
-		boolean tutorial = false;
-
-		Game.createModels();
 		Game.game.window.setIcon("/images/icon.png");
 
 		double scale = 1;
@@ -129,6 +148,19 @@ public class Panel
 		Hotbar.toggle.posX = Drawing.drawing.interfaceSizeX / 2;
 		Hotbar.toggle.posY = Drawing.drawing.interfaceSizeY - 20;
 
+		Game.createModels();
+
+		Game.dummyTank = new TankDummy("dummy",0, 0, 0);
+		Game.dummyTank.team = null;
+		Game.dummyTank.networkID = -1;
+
+		for (Extension e : Game.extensionRegistry.extensions)
+			e.loadResources();
+
+		zoomTranslation.window = Game.game.window;
+		zoomTranslation.applyAsShadow = true;
+		dummySpin = new TankDummyLoadingScreen(Drawing.drawing.sizeX / 2, Drawing.drawing.sizeY / 2);
+
 		if (Game.usernameInvalid(Game.player.username))
 			Game.screen = new ScreenUsernameInvalid();
 		else
@@ -139,17 +171,6 @@ public class Panel
 				Game.screen = new ScreenTitle();
 		}
 
-		BaseFile tutorialFile = Game.game.fileManager.getFile(Game.homedir + Game.tutorialPath);
-		if (!tutorialFile.exists())
-		{
-			tutorial = true;
-			Game.silentCleanUp();
-			Game.lastVersion = Game.version;
-			ScreenOptions.saveOptions(Game.homedir);
-			new Tutorial().loadTutorial(true, Game.game.window.touchscreen);
-			((ScreenGame) Game.screen).introBattleMusicEnd = 0;
-		}
-
 		ScreenChangelog.Changelog.setupLogs();
 
 		ScreenChangelog s = new ScreenChangelog();
@@ -157,6 +178,8 @@ public class Panel
 
 		if (!s.pages.isEmpty())
 			Game.screen = s;
+
+		Game.loadTankMusic();
 
 		if (Game.game.window.soundsEnabled)
 		{
@@ -175,13 +198,16 @@ public class Panel
 			}
 
 			Game.game.window.soundPlayer.registerCombinedMusic("/music/battle.ogg", "battle");
-			Game.game.window.soundPlayer.registerCombinedMusic("/music/battle_night.ogg", "battle");
 			Game.game.window.soundPlayer.registerCombinedMusic("/music/battle_paused.ogg", "battle");
+
+			Game.game.window.soundPlayer.registerCombinedMusic("/music/battle_night.ogg", "battle_night");
+			Game.game.window.soundPlayer.registerCombinedMusic("/music/battle_paused.ogg", "battle_night");
+
 			Game.game.window.soundPlayer.registerCombinedMusic("/music/battle_timed.ogg", "battle_timed");
 			Game.game.window.soundPlayer.registerCombinedMusic("/music/battle_timed_paused.ogg", "battle_timed");
 
-			Game.game.window.soundPlayer.registerCombinedMusic("/music/editor.ogg", "editor");
-			Game.game.window.soundPlayer.registerCombinedMusic("/music/editor_paused.ogg", "editor");
+			//Game.game.window.soundPlayer.registerCombinedMusic("/music/editor.ogg", "editor");
+			//Game.game.window.soundPlayer.registerCombinedMusic("/music/editor_paused.ogg", "editor");
 		}
 
 		if (Game.game.window.soundsEnabled)
@@ -197,28 +223,7 @@ public class Panel
 			Game.game.window.soundPlayer.loadMusic("/music/battle.ogg");
 		}
 
-		introMusicEnd = System.currentTimeMillis() + Long.parseLong(Game.game.fileManager.getInternalFileContents("/music/intro_length.txt").get(0));
-
-		introMusicEnd -= 40;
-
-		if (Game.framework == Game.Framework.libgdx)
-			introMusicEnd -= 100;
-
-		if (!tutorial)
-			Drawing.drawing.playMusic("menu_intro.ogg", Game.musicVolume, false, "intro", 0, false);
-		else
-		{
-			Drawing.drawing.playSound("battle_intro.ogg", Game.musicVolume, true);
-			introMusicEnd = System.currentTimeMillis() + Long.parseLong(Game.game.fileManager.getInternalFileContents("/music/battle_intro_length.txt").get(0));
-		}
-
-		zoomTranslation.window = Game.game.window;
-		zoomTranslation.applyAsShadow = true;
-
-		dummySpin = new TankDummyLoadingScreen(Drawing.drawing.sizeX / 2, Drawing.drawing.sizeY / 2);
-
-		for (Extension e: Game.extensionRegistry.extensions)
-			e.loadResources();
+		settingUp = false;
 	}
 
 	public void update()
@@ -228,21 +233,68 @@ public class Panel
 
 		firstFrame = false;
 
-		if (Game.game.window.validPressedKeys.contains(InputCodes.KEY_F) || !Game.cinematic)
+		Game.prevScreen = Game.screen;
+		Obstacle.lastDrawSize = Obstacle.draw_size;
+
+		if (!started && (Game.game.window.validPressedKeys.contains(InputCodes.KEY_F) || !Game.cinematic))
+		{
 			started = true;
+			this.startTime = System.currentTimeMillis() + splash_duration;
+			//Drawing.drawing.playSound("splash_jingle.ogg");
+		}
 
 		if (!started)
 			this.startTime = System.currentTimeMillis();
 
+		int maxFps = Game.maxFPS;
 		if (Game.deterministicMode)
+			maxFps = 60;
+
+		if (maxFps > 0)
 		{
-			while (System.nanoTime() - lastFrameNano < 1000000000 / 60)
+			int frameTime = 1000000000 / maxFps;
+			while (System.nanoTime() - lastFrameNano < frameTime)
 			{
 
 			}
-
-			lastFrameNano = System.nanoTime();
 		}
+
+		lastFrameNano = System.nanoTime();
+
+		if (System.currentTimeMillis() - this.startTime < 0)
+		{
+			return;
+		}
+
+		if (!splashFinished)
+		{
+			splashFinished = true;
+
+			boolean tutorial = false;
+
+			BaseFile tutorialFile = Game.game.fileManager.getFile(Game.homedir + Game.tutorialPath);
+			if (!tutorialFile.exists())
+			{
+				tutorial = true;
+				Game.silentCleanUp();
+				Game.lastVersion = Game.version;
+				ScreenOptions.saveOptions(Game.homedir);
+				new Tutorial().loadTutorial(true, Game.game.window.touchscreen);
+				((ScreenGame) Game.screen).introBattleMusicEnd = 0;
+			}
+
+			introMusicEnd = System.currentTimeMillis() + Long.parseLong(Game.game.fileManager.getInternalFileContents("/music/intro_length.txt").get(0));
+
+			introMusicEnd -= 40;
+
+			if (Game.framework == Game.Framework.libgdx)
+				introMusicEnd -= 100;
+
+			if (!tutorial)
+				Drawing.drawing.playMusic("menu_intro.ogg", Game.musicVolume, false, "intro", 0, false);
+		}
+
+		Game.game.window.constrainMouse = Game.constrainMouse && ((Game.screen instanceof ScreenGame && !((ScreenGame) Game.screen).paused) || Game.screen instanceof ScreenLevelEditor);
 
 		if (!Game.shadowsEnabled)
 			Game.game.window.setShadowQuality(0);
@@ -292,10 +344,26 @@ public class Panel
 
 		if (System.currentTimeMillis() - startTime < introTime + introAnimationTime)
 		{
+			if (ScreenInterlevel.tutorialInitial && System.currentTimeMillis() - startTime > introTime + introAnimationTime - 1500 && !playedTutorialIntroMusic)
+			{
+				playedTutorialIntroMusic = true;
+				Drawing.drawing.playSound("battle_intro.ogg", Game.musicVolume, true);
+				introMusicEnd = System.currentTimeMillis() + Long.parseLong(Game.game.fileManager.getInternalFileContents("/music/battle_intro_length.txt").get(0));
+			}
+
 			dummySpin.posX = Drawing.drawing.sizeX / 2;
 			dummySpin.posY = Drawing.drawing.sizeY / 2;
 			dummySpin.angle = Math.PI * 2 * (System.currentTimeMillis() - startTime) / (introTime + introAnimationTime);
 			return;
+		}
+
+		if (settingUp)
+			return;
+
+		if (Game.screen instanceof ScreenGame)
+		{
+			for (IFixedMenu menu : ModAPI.menuGroup)
+				menu.update();
 		}
 
 		synchronized (Game.eventsIn)
@@ -312,6 +380,7 @@ public class Panel
 		for (int i = 0; i < Game.game.heightGrid.length; i++)
 		{
 			Arrays.fill(Game.game.heightGrid[i], -1000);
+			Arrays.fill(Game.game.groundHeightGrid[i], -1000);
 		}
 
 		if (ScreenPartyHost.isServer)
@@ -337,8 +406,11 @@ public class Panel
 
 							if (Crusade.currentCrusade != null)
 							{
-								Crusade.currentCrusade.crusadePlayers.get(p).coins = p.hotbar.coins;
-								Crusade.currentCrusade.disconnectedPlayers.add(Crusade.currentCrusade.crusadePlayers.remove(p));
+								if (Crusade.currentCrusade.crusadePlayers.containsKey(p))
+								{
+									Crusade.currentCrusade.crusadePlayers.get(p).coins = p.hotbar.coins;
+									Crusade.currentCrusade.disconnectedPlayers.add(Crusade.currentCrusade.crusadePlayers.remove(p));
+								}
 							}
 						}
 					}
@@ -346,7 +418,7 @@ public class Panel
 					Game.removePlayer(ScreenPartyHost.disconnectedPlayers.get(i));
 				}
 
-				if (ScreenPartyHost.readyPlayers.size() >= ScreenPartyHost.includedPlayers.size() && Game.screen instanceof ScreenGame)
+				if (ScreenPartyHost.readyPlayers.size() >= ScreenPartyHost.includedPlayers.size() && Game.screen instanceof ScreenGame && ((ScreenGame) Game.screen).cancelCountdown)
 				{
 					Game.eventsOut.add(new EventBeginLevelCountdown());
 					((ScreenGame) Game.screen).cancelCountdown = false;
@@ -361,7 +433,9 @@ public class Panel
 
 		if (!(Game.screen instanceof ScreenInfo))
 		{
-			this.zoomTimer -= 0.02 * Panel.frameFrequency;
+			if (!(Game.screen instanceof ScreenGame) || Panel.zoomTarget < 0 ||
+					((Game.playerTank == null || Game.playerTank.destroy) && (((ScreenGame) Game.screen).spectatingTank == null)) || !((ScreenGame) Game.screen).playing)
+				this.zoomTimer -= 0.02 * Panel.frameFrequency;
 		}
 
 		if (((Game.playerTank != null && !Game.playerTank.destroy) || (Game.screen instanceof ScreenGame && ((ScreenGame) Game.screen).spectatingTank != null)) && !ScreenGame.finished
@@ -402,7 +476,7 @@ public class Panel
 			this.pastPlayerY.add(Drawing.drawing.playerY);
 			this.pastPlayerTime.add(this.age);
 
-			while (Panel.panel.pastPlayerTime.size() > 1 && Panel.panel.pastPlayerTime.get(1) < Panel.panel.age - Drawing.track_offset)
+			while (Panel.panel.pastPlayerTime.size() > 1 && Panel.panel.pastPlayerTime.get(1) < Panel.panel.age - Drawing.drawing.getTrackOffset())
 			{
 				Panel.panel.pastPlayerX.remove(0);
 				Panel.panel.pastPlayerY.remove(0);
@@ -411,10 +485,17 @@ public class Panel
 
 			if (Drawing.drawing.movingCamera)
 			{
-				this.zoomTimer += 0.04 * Panel.frameFrequency;
+				if (!(Game.screen instanceof ScreenGame) || Panel.zoomTarget < 0 ||
+						((Game.playerTank == null || Game.playerTank.destroy) && (((ScreenGame) Game.screen).spectatingTank == null)) ||
+						!((ScreenGame) Game.screen).playing)
+					this.zoomTimer += 0.04 * Panel.frameFrequency;
 
-				if (ScreenPartyHost.isServer || ScreenPartyLobby.isClient)
-					this.zoomTimer = Math.min(this.zoomTimer, 1 - Game.startTime / Game.currentLevel.startTime);
+				double mul = Panel.zoomTarget;
+				if (mul < 0)
+					mul = 1;
+
+				if (Game.startTime > 0 && (ScreenPartyHost.isServer || ScreenPartyLobby.isClient))
+					this.zoomTimer = Math.min(this.zoomTimer, mul * (1 - Game.startTime / Game.currentLevel.startTime));
 			}
 		}
 		else
@@ -423,6 +504,52 @@ public class Panel
 		}
 
 		this.zoomTimer = Math.min(Math.max(this.zoomTimer, 0), 1);
+
+		if (Game.screen instanceof ScreenGame && Drawing.drawing.enableMovingCamera && Panel.zoomTarget >= 0 && (((ScreenGame) Game.screen).spectatingTank != null || (Game.playerTank != null && !Game.playerTank.destroy)) && ((ScreenGame) Game.screen).playing)
+		{
+			double speed = 0.3 * Drawing.drawing.unzoomedScale;
+			double accel = 0.0003 * Drawing.drawing.unzoomedScale;
+			double distDampen = 2;
+
+			if (Panel.autoZoom)
+			{
+				speed /= 4;
+
+				if (speed - Panel.lastAutoZoomSpeed > accel * Panel.frameFrequency)
+					speed = Panel.lastAutoZoomSpeed + accel * Panel.frameFrequency;
+
+				if (-speed + Panel.lastAutoZoomSpeed > accel * Panel.frameFrequency)
+					speed = Panel.lastAutoZoomSpeed - accel * Panel.frameFrequency;
+
+				double dist = Math.abs(this.zoomTimer - Panel.zoomTarget) / Drawing.drawing.unzoomedScale;
+				if (dist < distDampen)
+					speed *= Math.pow(dist / distDampen, Panel.frameFrequency / 20);
+
+				Panel.lastAutoZoomSpeed = speed;
+
+				if (Math.abs(Panel.zoomTarget - this.zoomTimer) < speed)
+				{
+					this.zoomTimer = Panel.zoomTarget;
+				}
+				else
+				{
+					speed *= Math.signum(Panel.zoomTarget - this.zoomTimer);
+					this.zoomTimer = this.zoomTimer + speed * Panel.frameFrequency;
+				}
+			}
+			else
+			{
+				if (this.zoomTimer > Panel.zoomTarget)
+					speed = -0.02;
+				else
+					speed = 0.02;
+
+				if (this.zoomTimer > Panel.zoomTarget)
+					this.zoomTimer = Math.max(this.zoomTimer + speed * Panel.frameFrequency, Panel.zoomTarget);
+				else
+					this.zoomTimer = Math.min(this.zoomTimer + speed * Panel.frameFrequency, Panel.zoomTarget);
+			}
+		}
 
 		Drawing.drawing.scale = Game.screen.getScale();
 
@@ -442,6 +569,14 @@ public class Panel
 			onlinePaused = false;
 
 		ScreenOverlayChat.update(!(Game.screen instanceof IHiddenChatboxScreen));
+
+		if (Game.screen.interfaceScaleZoomOverride > 0)
+			Drawing.drawing.interfaceScaleZoom = Game.screen.interfaceScaleZoomOverride;
+		else
+			Drawing.drawing.interfaceScaleZoom = Drawing.drawing.interfaceScaleZoomDefault;
+
+		Drawing.drawing.interfaceSizeX = Drawing.drawing.baseInterfaceSizeX / Drawing.drawing.interfaceScaleZoom;
+		Drawing.drawing.interfaceSizeY = Drawing.drawing.baseInterfaceSizeY / Drawing.drawing.interfaceScaleZoom;
 
 		if (!onlinePaused)
 			Game.screen.update();
@@ -476,7 +611,12 @@ public class Panel
 		}
 
 		if (prevScreen != Game.screen)
+		{
+			Drawing.drawing.interfaceSizeX = Drawing.drawing.baseInterfaceSizeX / Drawing.drawing.interfaceScaleZoom;
+			Drawing.drawing.interfaceSizeY = Drawing.drawing.baseInterfaceSizeY / Drawing.drawing.interfaceScaleZoom;
+
 			Panel.selectedTextBox = null;
+		}
 
 		if (ScreenPartyLobby.isClient)
 		{
@@ -531,8 +671,22 @@ public class Panel
 		if (Game.cinematic)
 			introAnimationTime = 4000;
 
+		if (System.currentTimeMillis() - startTime < 0)
+		{
+			double frac = (startTime - System.currentTimeMillis() * 1.0) / splash_duration;
+
+			double frac2 = Math.min(frac * 4, 1) * Math.min((1 - frac) * 4, 1);
+
+			double[] col = Game.getRainbowColor((System.currentTimeMillis() % (1000)) / 1000.0);
+			Drawing.drawing.setColor(1 * frac2 * col[0], 1 * frac2 * col[1], 1 * frac2 * col[2]);
+			Drawing.drawing.setInterfaceFontSize(100 * (1 + (- frac + 0.5) * 0.8));
+			Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2, "Opal Games");
+			return;
+		}
+
 		if (this.frameStartTime - startTime < introTime + introAnimationTime)
 		{
+			Drawing.drawing.forceRedrawTerrain();
 			double frac = ((this.frameStartTime - startTime - introTime) / introAnimationTime);
 
 			if (Game.enable3d && Game.fancyTerrain)
@@ -551,7 +705,7 @@ public class Panel
 			Game.game.window.transformations.clear();
 			Game.game.window.loadPerspective();
 
-			Game.game.window.setBatchMode(false, false, false, false);
+			Game.game.window.shapeRenderer.setBatchMode(false, false, false, false);
 
 			if (System.currentTimeMillis() - startTime > introTime)
 			{
@@ -559,8 +713,8 @@ public class Panel
 				drawBar(40 - frac * 40);
 			}
 
-			Game.game.window.setBatchMode(false, false, false, false);
-			Game.game.window.setBatchMode(false, false, true, false);
+			Game.game.window.shapeRenderer.setBatchMode(false, false, false, false);
+			Game.game.window.shapeRenderer.setBatchMode(false, false, true, false);
 
 			if (Game.screen instanceof ISeparateBackgroundScreen)
 			{
@@ -589,9 +743,19 @@ public class Panel
 			return;
 		}
 
+		if (!this.introFinished)
+		{
+			Drawing.drawing.forceRedrawTerrain();
+			this.introFinished = true;
+		}
+
 		if (!(Game.screen instanceof ScreenExit))
 		{
-			Drawing.drawing.setColor(174, 92, 16);
+			if (Game.screen instanceof ScreenGame && Game.currentLevel != null && Game.followingCam)
+				Drawing.drawing.setColor(133 * (Level.currentLightIntensity * 0.7), 193 * (Level.currentLightIntensity * 0.7), 233 * (Level.currentLightIntensity * 0.7));
+			else
+				Drawing.drawing.setColor(174, 92, 16);
+
 			Drawing.drawing.fillInterfaceRect(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2, Game.game.window.absoluteWidth / Drawing.drawing.interfaceScale, Game.game.window.absoluteHeight / Drawing.drawing.interfaceScale);
 		}
 
@@ -616,6 +780,18 @@ public class Panel
 		else
 			Game.screen.draw();
 
+		if (Game.screen instanceof ScreenGame)
+		{
+			for (IFixedMenu menu : ModAPI.menuGroup)
+				menu.draw();
+		}
+
+		for (Movable m : Game.movables)
+		{
+			if (m instanceof TankNPC && ((TankNPC) m).draw)
+				((TankNPC) m).drawMessage();
+		}
+
 		ScreenOverlayChat.draw(!(Game.screen instanceof IHiddenChatboxScreen));
 
 		if (!(Game.screen instanceof ScreenExit))
@@ -623,6 +799,9 @@ public class Panel
 
 		if (Game.screen.showDefaultMouse)
 			this.drawMouseTarget();
+
+		Drawing.drawing.setColor(0, 0, 0, 0);
+		Drawing.drawing.fillInterfaceRect(0, 0, 0, 0);
 
 		Game.screen.drawPostMouse();
 

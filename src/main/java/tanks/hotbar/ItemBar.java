@@ -47,14 +47,7 @@ public class ItemBar
 		for (int i = 0; i < this.slotButtons.length; i++)
 		{
 			final int j = i;
-			this.slotButtons[i] = new Button(0, 0, size + 2.5, size * 1.5, "", new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					setItem(j);
-				}
-			});
+			this.slotButtons[i] = new Button(0, 0, size + 2.5, size * 1.5, "", () -> setItem(j));
 		}
 	}
 
@@ -62,10 +55,10 @@ public class ItemBar
 	{
 		Item i = Item.parseItem(this.player, item.toString());
 		int emptyAmount = 0;
-		for (int x = 0; x < this.slots.length; x++)
+		for (Item slot : this.slots)
 		{
-			if (this.slots[x].name.equals(i.name) || this.slots[x] instanceof ItemEmpty)
-				emptyAmount += i.maxStackSize - slots[x].stackSize;
+			if (slot.name.equals(i.name) || slot instanceof ItemEmpty)
+				emptyAmount += i.maxStackSize - slot.stackSize;
 		}
 
 		if (emptyAmount < i.stackSize)
@@ -155,6 +148,20 @@ public class ItemBar
 		return true;
 	}
 
+	public Item getSelectedItem(boolean rightClick)
+	{
+		if (selected == -1)
+			return null;
+
+		if (slots[selected] instanceof ItemEmpty)
+			return null;
+
+		if (slots[selected].rightClick != rightClick)
+			return null;
+
+		return slots[selected];
+	}
+
 	public void update()
 	{
 		checkKey(Game.game.input.hotbarDeselect, -1);
@@ -194,6 +201,9 @@ public class ItemBar
 
 	public void checkKey(InputBindingGroup input, int index)
 	{
+		if (Game.screen instanceof ScreenGame && ((ScreenGame) Game.screen).paused)
+			return;
+
 		if (input.isValid())
 		{
 			this.setItem(index);

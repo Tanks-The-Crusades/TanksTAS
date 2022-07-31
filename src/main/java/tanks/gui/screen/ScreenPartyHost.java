@@ -2,11 +2,13 @@ package tanks.gui.screen;
 
 import tanks.*;
 import tanks.event.EventPlayerChat;
+import tanks.generator.LevelGeneratorVersus;
 import tanks.gui.Button;
 import tanks.gui.ChatBox;
 import tanks.gui.ChatMessage;
 import tanks.network.Server;
 import tanks.network.SynchronizedList;
+import tanks.translation.Translation;
 
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
@@ -17,9 +19,9 @@ public class ScreenPartyHost extends Screen
     Thread serverThread;
     public static Server server;
     public static boolean isServer = false;
-    public static SynchronizedList<UUID> includedPlayers = new SynchronizedList<UUID>();
-    public static SynchronizedList<Player> readyPlayers = new SynchronizedList<Player>();
-    public static SynchronizedList<UUID> disconnectedPlayers = new SynchronizedList<UUID>();
+    public static SynchronizedList<UUID> includedPlayers = new SynchronizedList<>();
+    public static SynchronizedList<Player> readyPlayers = new SynchronizedList<>();
+    public static SynchronizedList<UUID> disconnectedPlayers = new SynchronizedList<>();
     public static ScreenPartyHost activeScreen;
 
     public String ip = "";
@@ -32,123 +34,62 @@ public class ScreenPartyHost extends Screen
     public static int username_spacing = 30;
     public static int username_y_offset = -240;
 
-    public static SynchronizedList<ChatMessage> chat = new SynchronizedList<ChatMessage>();
+    public static SynchronizedList<ChatMessage> chat = new SynchronizedList<>();
 
     public static ChatBox chatbox;
 
     public SynchronizedList<SharedLevel> sharedLevels = new SynchronizedList<>();
     public SynchronizedList<SharedCrusade> sharedCrusades = new SynchronizedList<>();
 
-    Button newLevel = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 240, this.objWidth, this.objHeight, "Random level", new Runnable()
+    Button newLevel = new Button(this.centerX + 190, this.centerY - 240, this.objWidth, this.objHeight, "Random level", () ->
     {
-        @Override
-        public void run()
-        {
-            Game.reset();
-            Game.screen = new ScreenGame();
-        }
+        Game.cleanUp();
+        Game.loadRandomLevel();
+        Game.screen = new ScreenGame();
     }
             , "Generate a random level to play");
 
-    Button nextUsernamePage = new Button(Drawing.drawing.interfaceSizeX / 2 - 190,
-            Drawing.drawing.interfaceSizeY / 2 + username_y_offset + username_spacing * (1 + entries_per_page), 300, 30, "Next page", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            usernamePage++;
-        }
-    }
+    Button nextUsernamePage = new Button(this.centerX - 190,
+            this.centerY + username_y_offset + username_spacing * (1 + entries_per_page), 300, 30, "Next page", () -> usernamePage++
     );
 
-    Button previousUsernamePage = new Button(Drawing.drawing.interfaceSizeX / 2 - 190, Drawing.drawing.interfaceSizeY / 2 + username_y_offset,
-            300, 30, "Previous page", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            usernamePage--;
-        }
-    }
+    Button previousUsernamePage = new Button(this.centerX - 190, this.centerY + username_y_offset,
+            300, 30, "Previous page", () -> usernamePage--
     );
 
-    Button versus = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 180, this.objWidth, this.objHeight, "Versus", new Runnable()
+    Button versus = new Button(this.centerX + 190, this.centerY - 180, this.objWidth, this.objHeight, "Versus", () ->
     {
-        @Override
-        public void run()
-        {
-            Game.cleanUp();
-            String s = LevelGeneratorVersus.generateLevelString();
-            Level l = new Level(s);
-            l.loadLevel();
-            ScreenGame.versus = true;
+        Game.cleanUp();
+        String s = LevelGeneratorVersus.generateLevelString();
+        Level l = new Level(s);
+        l.loadLevel();
+        ScreenGame.versus = true;
 
-            Game.screen = new ScreenGame();
-        }
+        Game.screen = new ScreenGame();
     }
             , "Fight other players in this party---in a randomly generated level");
 
-    Button crusades = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 60, this.objWidth, this.objHeight, "Crusades", new Runnable()
+    Button crusades = new Button(this.centerX + 190, this.centerY - 60, this.objWidth, this.objHeight, "Crusades", () ->
     {
-        @Override
-        public void run()
-        {
-            if (Crusade.currentCrusade == null)
-                Game.screen = new ScreenPartyCrusades();
-            else
-                Game.screen = new ScreenPartyResumeCrusade();
-        }
+        if (Crusade.currentCrusade == null)
+            Game.screen = new ScreenPartyCrusades();
+        else
+            Game.screen = new ScreenPartyResumeCrusade();
     },
             "Fight battles in an order,---and see how long you can survive!");
 
-    Button myLevels = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 120, this.objWidth, this.objHeight, "My levels", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenPlaySavedLevels();
-        }
-    },
+    Button myLevels = new Button(this.centerX + 190, this.centerY - 120, this.objWidth, this.objHeight, "My levels", () -> Game.screen = new ScreenPlaySavedLevels(),
             "Play levels you have created");
 
-    Button share = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 + 40, this.objWidth, this.objHeight, "Upload", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenShareSelect();
-        }
-    });
+    Button share = new Button(this.centerX + 190, this.centerY + 40, this.objWidth, this.objHeight, "Upload", () -> Game.screen = new ScreenShareSelect());
 
-    Button shared = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 + 100, this.objWidth, this.objHeight, "Download", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenSharedSummary(sharedLevels, sharedCrusades);
-        }
-    }
-    );
+    Button shared = new Button(this.centerX + 190, this.centerY + 100, this.objWidth, this.objHeight, "Download", () -> Game.screen = new ScreenSharedSummary(sharedLevels, sharedCrusades));
 
-    Button partyOptions = new Button(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 + 180, this.objWidth, this.objHeight, "Party options", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenOptionsPartyHost();
-        }
-    }
-    );
+    Button partyOptions = new Button(this.centerX + 190, this.centerY + 180, this.objWidth, this.objHeight, "Party options", () -> Game.screen = new ScreenOptionsPartyHost());
 
-    Button quit = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 270, this.objWidth, this.objHeight, "End party", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenConfirmEndParty();
-        }
-    }
-    );
+    Button quit = new Button(this.centerX, this.centerY + 270, this.objWidth, this.objHeight, "End party", () -> Game.screen = new ScreenConfirmEndParty());
+
+    Button toggleIP = new Button(-1000, -1000, this.objHeight, this.objHeight, "", () -> Game.showIP = !Game.showIP, "Toggle showing IP address");
 
     public ScreenPartyHost()
     {
@@ -156,15 +97,14 @@ public class ScreenPartyHost extends Screen
 
         this.music = "menu_3.ogg";
         this.musicID = "menu";
+        toggleIP.fullInfo = true;
+        toggleIP.textOffsetX = 1.5;
+        toggleIP.textOffsetY = 1.5;
 
-        chatbox = new ChatBox(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 30, Drawing.drawing.interfaceSizeX - 20, 40, Game.game.input.chat, new Runnable()
+        chatbox = new ChatBox(this.centerX, Drawing.drawing.interfaceSizeY - 30, Drawing.drawing.interfaceSizeX - 20, 40, Game.game.input.chat, () ->
         {
-            @Override
-            public void run()
-            {
-                ScreenPartyHost.chat.add(0, new ChatMessage(Game.player, ScreenPartyHost.chatbox.inputText));
-                Game.eventsOut.add(new EventPlayerChat(Game.player, ScreenPartyHost.chatbox.inputText));
-            }
+            ScreenPartyHost.chat.add(0, new ChatMessage(Game.player, ScreenPartyHost.chatbox.inputText));
+            Game.eventsOut.add(new EventPlayerChat(Game.player, ScreenPartyHost.chatbox.inputText));
         });
 
         if (Game.game.window.touchscreen)
@@ -175,15 +115,8 @@ public class ScreenPartyHost extends Screen
         for (int i = 0; i < this.kickButtons.length; i++)
         {
             final int j = i;
-            kickButtons[i] = new Button(Drawing.drawing.interfaceSizeX / 2 - 20,
-                    Drawing.drawing.interfaceSizeY / 2 + (1 + i) * username_spacing + username_y_offset, 25, 25, "x", new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    Game.screen = new ScreenPartyKick(server.connections.get(j + usernamePage * entries_per_page));
-                }
-            });
+            kickButtons[i] = new Button(this.centerX - 20,
+                    this.centerY + (1 + i) * username_spacing + username_y_offset, 25, 25, "x", () -> Game.screen = new ScreenPartyKick(server.connections.get(j + usernamePage * entries_per_page)));
 
             kickButtons[i].textOffsetY = -1;
             kickButtons[i].textOffsetX = 1;
@@ -205,51 +138,40 @@ public class ScreenPartyHost extends Screen
 
         activeScreen = this;
         isServer = true;
-        serverThread = new Thread(new Runnable()
+        serverThread = new Thread(() ->
         {
-
-            @Override
-            public void run()
+            try
             {
-                try
-                {
-                    server = new Server(Game.port);
-                    server.run();
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+                server = new Server(Game.port);
+                server.run();
             }
-
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
         });
 
         serverThread.setDaemon(true);
         serverThread.start();
 
-        new Thread(new Runnable()
+        new Thread(() ->
         {
-
-            @Override
-            public void run()
+            ip = Translation.translate("Getting your IP Address...");
+            try
             {
-                ip = "Getting your IP Address...";
-                try
-                {
-                    ip = "Your Local IP Address: " + Inet4Address.getLocalHost().getHostAddress() + " (Port: " + Game.port + ")";
-                }
-                catch (UnknownHostException e)
-                {
-                    ip = "Connect to a non-cellular data network to play with others!";
-                }
-
-                if (ip.contains("%"))
-                    ip = "Connect to a network to play with others!";
-
-                if (ip.contains("127.0.0.1"))
-                    ip = "Party host";
-
+                ip = Translation.translate("Your Local IP Address: %s (Port: %d)", Inet4Address.getLocalHost().getHostAddress(), Game.port);
             }
+            catch (UnknownHostException e)
+            {
+                ip = Translation.translate("Connect to a non-cellular data network to play with others!");
+            }
+
+            if (ip.contains("%"))
+                ip = Translation.translate("Connect to a network to play with others!");
+
+            if (ip.contains("127.0.0.1"))
+                ip = Translation.translate("Party host");
+
         }
         ).start();
     }
@@ -281,6 +203,9 @@ public class ScreenPartyHost extends Screen
                 this.kickButtons[i].update();
             }
         }
+
+        if (!this.ip.equals(Translation.translate("Party host")))
+            this.toggleIP.update();
     }
 
     @Override
@@ -297,24 +222,39 @@ public class ScreenPartyHost extends Screen
         shared.draw();
         quit.draw();
 
-
         Drawing.drawing.setColor(0, 0, 0);
 
+        double ipY = 360;
         if (Game.steamNetworkHandler.initialized)
-        {
-            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 360, this.ip);
-            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 320, "Also hosting on Steam peer-to-peer (Steam friends can join)");
-        }
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - 320, "Also hosting on Steam peer-to-peer (Steam friends can join)");
         else
-        {
-            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 330, this.ip);
-        }
+            ipY = 330;
 
-        Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 - 280, "Play:");
+        String title = this.ip;
 
-        Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 + 190, Drawing.drawing.interfaceSizeY / 2 + 0, "Level and crusade sharing:");
+        if (!Game.showIP)
+            title = Translation.translate("Party host");
 
-        Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 - 190, Drawing.drawing.interfaceSizeY / 2 - 280, "Players in this party:");
+        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - ipY, title);
+        this.toggleIP.posX = this.centerX + Game.game.window.fontRenderer.getStringSizeX(Drawing.drawing.fontSize, title) / Drawing.drawing.interfaceScale / 2 + 30;
+        this.toggleIP.posY = this.centerY - ipY;
+
+        if (Game.showIP)
+            this.toggleIP.setText("-");
+        else
+            this.toggleIP.setText("+");
+
+        if (!this.ip.equals(Translation.translate("Party host")))
+            this.toggleIP.draw();
+
+        Drawing.drawing.setColor(0, 0, 0);
+        Drawing.drawing.setInterfaceFontSize(this.textSize);
+
+        Drawing.drawing.displayInterfaceText(this.centerX + 190, this.centerY - 280, "Play:");
+
+        Drawing.drawing.displayInterfaceText(this.centerX + 190, this.centerY + 0, "Level and crusade sharing:");
+
+        Drawing.drawing.displayInterfaceText(this.centerX - 190, this.centerY - 280, "Players in this party:");
 
         if (server != null && server.connections != null)
         {
@@ -332,7 +272,7 @@ public class ScreenPartyHost extends Screen
 
                 n = "\u00A7000127255255" + n;
 
-                Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 - 190, Drawing.drawing.interfaceSizeY / 2 + username_y_offset, n);
+                Drawing.drawing.drawInterfaceText(this.centerX - 190, this.centerY + username_y_offset, n);
             }
 
             if (server.connections != null)
@@ -345,16 +285,16 @@ public class ScreenPartyHost extends Screen
                         {
                             Drawing.drawing.setInterfaceFontSize(this.textSize);
                             Drawing.drawing.setColor(0, 0, 0);
-                            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 - 190,
-                                    Drawing.drawing.interfaceSizeY / 2 + (1 + i - this.usernamePage * entries_per_page) * username_spacing + username_y_offset,
+                            Drawing.drawing.drawInterfaceText(this.centerX - 190,
+                                    this.centerY + (1 + i - this.usernamePage * entries_per_page) * username_spacing + username_y_offset,
                                     server.connections.get(i).username);
 
                             this.kickButtons[i - this.usernamePage * entries_per_page].draw();
 
                             Drawing.drawing.setInterfaceFontSize(this.textSize / 2);
                             Drawing.drawing.setColor(0, 0, 0);
-                            Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2 - 370,
-                                    Drawing.drawing.interfaceSizeY / 2 + (1 + i - this.usernamePage * entries_per_page) * username_spacing + username_y_offset,
+                            Drawing.drawing.drawInterfaceText(this.centerX - 370,
+                                    this.centerY + (1 + i - this.usernamePage * entries_per_page) * username_spacing + username_y_offset,
                                     server.connections.get(i).lastLatencyAverage + "ms");
                         }
                         catch (Exception e)

@@ -26,8 +26,12 @@ public abstract class BaseWindow
     public double absoluteHeight;
     public double absoluteDepth;
 
+    public boolean hasResized;
+
     public double absoluteMouseX;
     public double absoluteMouseY;
+
+    public boolean constrainMouse;
 
     public double colorR;
     public double colorG;
@@ -37,16 +41,16 @@ public abstract class BaseWindow
 
     public boolean fullscreen;
 
-    public HashMap<Integer, InputPoint> touchPoints = new HashMap<Integer, InputPoint>();
+    public HashMap<Integer, InputPoint> touchPoints = new HashMap<>();
 
-    public ArrayList<Integer> pressedKeys = new ArrayList<Integer>();
-    public ArrayList<Integer> validPressedKeys = new ArrayList<Integer>();
+    public ArrayList<Integer> pressedKeys = new ArrayList<>();
+    public ArrayList<Integer> validPressedKeys = new ArrayList<>();
 
-    public ArrayList<Integer> textPressedKeys = new ArrayList<Integer>();
-    public ArrayList<Integer> textValidPressedKeys = new ArrayList<Integer>();
+    public ArrayList<Integer> textPressedKeys = new ArrayList<>();
+    public ArrayList<Integer> textValidPressedKeys = new ArrayList<>();
 
-    public ArrayList<Integer> pressedButtons = new ArrayList<Integer>();
-    public ArrayList<Integer> validPressedButtons = new ArrayList<Integer>();
+    public ArrayList<Integer> pressedButtons = new ArrayList<>();
+    public ArrayList<Integer> validPressedButtons = new ArrayList<>();
 
     public boolean validScrollUp;
     public boolean validScrollDown;
@@ -62,8 +66,8 @@ public abstract class BaseWindow
     public double keyboardOffset = 0;
     public double keyboardFraction = 1;
 
-    public ArrayList<Long> framesList = new ArrayList<Long>();
-    public ArrayList<Double> frameFrequencies = new ArrayList<Double>();
+    public ArrayList<Long> framesList = new ArrayList<>();
+    public ArrayList<Double> frameFrequencies = new ArrayList<>();
     public long lastFrame = System.currentTimeMillis();
     public double frameFrequency = 1;
 
@@ -73,7 +77,7 @@ public abstract class BaseWindow
     public IUpdater updater;
     public IWindowHandler windowHandler;
 
-    public ArrayList<Transformation> transformations = new ArrayList<Transformation>();
+    public ArrayList<Transformation> transformations = new ArrayList<>();
 
     public double yaw = 0;
     public double pitch = 0;
@@ -127,7 +131,7 @@ public abstract class BaseWindow
 
         this.framesList.add(milliTime);
 
-        ArrayList<Long> removeList = new ArrayList<Long>();
+        ArrayList<Long> removeList = new ArrayList<>();
 
         for (Long l : this.framesList)
         {
@@ -162,8 +166,8 @@ public abstract class BaseWindow
             totalFrequency += frequency;
         }
 
-        frameFrequency = Math.max(0, totalFrequency / frameFrequencies.size());
-        //frameFrequency = freq;
+        //frameFrequency = Math.max(0, totalFrequency / frameFrequencies.size());
+        frameFrequency = freq;
     }
 
     public abstract void run();
@@ -192,6 +196,8 @@ public abstract class BaseWindow
 
     public abstract void loadPerspective();
 
+    public abstract void clearDepth();
+
     public abstract String getClipboard();
 
     public abstract void setClipboard(String s);
@@ -216,12 +222,6 @@ public abstract class BaseWindow
 
     public abstract void createImage(String image, InputStream in);
 
-    public abstract void setBatchMode(boolean enabled, boolean quads, boolean depth);
-
-    public abstract void setBatchMode(boolean enabled, boolean quads, boolean depth, boolean glow);
-
-    public abstract void setBatchMode(boolean enabled, boolean quads, boolean depth, boolean glow, boolean depthMask);
-
     public abstract void setTextureCoords(double u, double v);
 
     public abstract void setTexture(String image);
@@ -233,6 +233,8 @@ public abstract class BaseWindow
     public abstract void addVertex(double x, double y);
 
     public abstract void openLink(URL url) throws Exception;
+
+    public abstract void setResolution(int x, int y);
 
     public abstract void setShadowQuality(double quality);
 
@@ -253,6 +255,8 @@ public abstract class BaseWindow
     public abstract ModelPart createModelPart(Model model, ArrayList<ModelPart.Shape> shapes, Model.Material material);
 
     public abstract PosedModel createPosedModel(Model m);
+
+    public abstract BaseShapeBatchRenderer createShapeBatchRenderer();
 
     public void setupKeyCodes()
     {

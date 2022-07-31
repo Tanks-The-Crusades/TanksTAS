@@ -4,10 +4,16 @@ import tanks.Crusade;
 import tanks.Drawing;
 import tanks.Game;
 import tanks.gui.Button;
+import tanks.translation.Translation;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ScreenCrusadeDetails extends Screen
 {
     public Crusade crusade;
+    public ScreenCrusadeLevels background;
 
     public Button begin = new Button(this.centerX, this.centerY + this.objYSpace * 0.5, this.objWidth, this.objHeight, "Play", new Runnable()
     {
@@ -38,7 +44,17 @@ public class ScreenCrusadeDetails extends Screen
         @Override
         public void run()
         {
-            Crusade.currentCrusade = crusade;
+            Crusade c;
+
+            if (crusade.internal)
+            {
+                String[] l = crusade.contents.split("\n");
+                c = new Crusade(new ArrayList<>(Arrays.asList(l)), crusade.name, crusade.fileName);
+            }
+            else
+                c = new Crusade(Game.game.fileManager.getFile(crusade.fileName), crusade.name);
+
+            Crusade.currentCrusade = c;
             Crusade.crusadeMode = true;
             Crusade.currentCrusade.begin();
             Game.screen = new ScreenGame(Crusade.currentCrusade.getShop());
@@ -53,7 +69,7 @@ public class ScreenCrusadeDetails extends Screen
             if (crusade.started)
                 Game.screen = new ScreenCrusadeEditWarning(Game.screen, crusade);
             else
-                Game.screen = new ScreenCrusadeBuilder(crusade);
+                Game.screen = new ScreenCrusadeEditor(crusade);
         }
     });
 
@@ -66,28 +82,20 @@ public class ScreenCrusadeDetails extends Screen
         }
     });
 
-    public Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", new Runnable()
+    public Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", () ->
     {
-        @Override
-        public void run()
-        {
-            if (ScreenPartyHost.isServer)
-                Game.screen = new ScreenPartyCrusades();
-            else
-                Game.screen = new ScreenCrusades();
-        }
+        if (ScreenPartyHost.isServer)
+            Game.screen = new ScreenPartyCrusades();
+        else
+            Game.screen = new ScreenCrusades();
     });
 
-    public Button back2 = new Button(this.centerX, this.centerY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Back", new Runnable()
+    public Button back2 = new Button(this.centerX, this.centerY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Back", () ->
     {
-        @Override
-        public void run()
-        {
-            if (ScreenPartyHost.isServer)
-                Game.screen = new ScreenPartyCrusades();
-            else
-                Game.screen = new ScreenCrusades();
-        }
+        if (ScreenPartyHost.isServer)
+            Game.screen = new ScreenPartyCrusades();
+        else
+            Game.screen = new ScreenCrusades();
     });
 
     public ScreenCrusadeDetails(Crusade c)
@@ -97,12 +105,18 @@ public class ScreenCrusadeDetails extends Screen
         this.music = "menu_5.ogg";
         this.musicID = "menu";
 
+        if (Game.previewCrusades)
+            this.forceInBounds = true;
+
         if (c.levels.size() <= 0)
         {
             begin.enabled = false;
             begin.enableHover = true;
-            begin.hoverText = new String[]{"This crusade has no levels.", "Add some to play it!"};
+            begin.setHoverText("This crusade has no levels.---Add some to play it!");
         }
+
+        if (Game.previewCrusades)
+            this.background = new ScreenCrusadeLevels(this.crusade);
     }
 
     @Override
@@ -129,18 +143,36 @@ public class ScreenCrusadeDetails extends Screen
     @Override
     public void draw()
     {
-        this.drawDefaultBackground();
+        if (Game.previewCrusades)
+            this.background.draw();
+        else
+            this.drawDefaultBackground();
 
-        Drawing.drawing.setColor(0, 0, 0);
+        Drawing.drawing.setColor(0, 0, 0, 255);
+
+        if (Game.previewCrusades)
+        {
+            Drawing.drawing.setColor(0, 0, 0, 127);
+            Drawing.drawing.fillInterfaceRect(this.centerX, this.centerY, Drawing.drawing.interfaceSizeX * 0.7, this.objYSpace * 9);
+            Drawing.drawing.fillInterfaceRect(this.centerX, this.centerY, Drawing.drawing.interfaceSizeX * 0.7 - 20, this.objYSpace * 9 - 20);
+
+            Drawing.drawing.setColor(255, 255, 255);
+        }
+
         Drawing.drawing.setInterfaceFontSize(this.textSize * 2);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, crusade.name.replace("_", " "));
+
+        if (this.crusade.internal)
+            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, Translation.translate(crusade.name.replace("_", " ")));
+        else
+            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, crusade.name.replace("_", " "));
+
         Drawing.drawing.setInterfaceFontSize(this.textSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 2.5, "Levels: " + crusade.levels.size());
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 2.5, "Levels: %d", crusade.levels.size());
 
         if (crusade.started && !ScreenPartyHost.isServer)
         {
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, "Current battle: " + (crusade.currentLevel + 1));
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 1.5, "Remaining lives: " + Game.player.remainingLives);
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 2, "Current battle: %d", (crusade.currentLevel + 1));
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 1.5, "Remaining lives: %d", Game.player.remainingLives);
         }
 
         if (!(crusade.readOnly || crusade.internal || ScreenPartyHost.isServer))

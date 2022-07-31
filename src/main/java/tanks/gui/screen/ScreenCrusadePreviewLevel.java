@@ -16,7 +16,7 @@ public class ScreenCrusadePreviewLevel extends Screen implements ILevelPreviewSc
 
     public int index;
 
-    public ArrayList<TankSpawnMarker> spawns = new ArrayList<TankSpawnMarker>();
+    public ArrayList<TankSpawnMarker> spawns = new ArrayList<>();
 
     public Button back = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY - 90, this.objWidth, this.objHeight, "Back", new Runnable()
     {
@@ -35,7 +35,7 @@ public class ScreenCrusadePreviewLevel extends Screen implements ILevelPreviewSc
         {
             Game.cleanUp();
 
-            String level = crusade.levels.get(index + 1);
+            String level = crusade.levels.get(index + 1).levelString;
 
             ScreenCrusadePreviewLevel s = new ScreenCrusadePreviewLevel(crusade, level, index + 1, previous);
             new Level(level).loadLevel(s);
@@ -50,7 +50,7 @@ public class ScreenCrusadePreviewLevel extends Screen implements ILevelPreviewSc
         {
             Game.cleanUp();
 
-            String level = crusade.levels.get(index - 1);
+            String level = crusade.levels.get(index - 1).levelString;
 
             ScreenCrusadePreviewLevel s = new ScreenCrusadePreviewLevel(crusade, level, index - 1, previous);
             new Level(level).loadLevel(s);
@@ -74,7 +74,7 @@ public class ScreenCrusadePreviewLevel extends Screen implements ILevelPreviewSc
 
         for (int i = 0; i < drawables.length; i++)
         {
-            drawables[i] = new ArrayList<IDrawable>();
+            drawables[i] = new ArrayList<>();
         }
 
         Obstacle.draw_size = Game.tile_size;
@@ -83,12 +83,12 @@ public class ScreenCrusadePreviewLevel extends Screen implements ILevelPreviewSc
         next.enabled = index < crusade.levels.size() - 1;
         prev.enabled = index > 0;
 
-        this.next.image = "vertical_arrow.png";
+        this.next.image = "icons/arrow_down.png";
         this.next.imageSizeX = 25;
-        this.next.imageSizeY = -25;
+        this.next.imageSizeY = 25;
         this.next.imageXOffset = 145;
 
-        this.prev.image = "vertical_arrow.png";
+        this.prev.image = "icons/arrow_up.png";
         this.prev.imageSizeX = 25;
         this.prev.imageSizeY = 25;
         this.prev.imageXOffset = 145;
@@ -193,17 +193,17 @@ public class ScreenCrusadePreviewLevel extends Screen implements ILevelPreviewSc
 
             Drawing.drawing.setColor(255, 255, 255, 200 - i * 30);
             Drawing.drawing.setInterfaceFontSize(this.textSize);
-            Drawing.drawing.drawInterfaceText(posX, Drawing.drawing.interfaceSizeY / 2 - (i + 1) * 40 - 60, (index - i) + ". " + crusade.levelNames.get(index - i - 1).replace("_", " "));
+            Drawing.drawing.drawInterfaceText(posX, Drawing.drawing.interfaceSizeY / 2 - (i + 1) * 40 - 60, (index - i) + ". " + crusade.levels.get(index - i - 1).levelName.replace("_", " "));
         }
 
         for (int i = 0; i < 7; i++)
         {
-            if (index + i + 1 >= crusade.levelNames.size())
+            if (index + i + 1 >= crusade.levels.size())
                 break;
 
             Drawing.drawing.setColor(255, 255, 255, 200 - i * 30);
             Drawing.drawing.setInterfaceFontSize(this.textSize);
-            Drawing.drawing.drawInterfaceText(posX, Drawing.drawing.interfaceSizeY / 2 + (i + 1) * 40 - 60, (index + i + 2) + ". " + crusade.levelNames.get(index + i + 1).replace("_", " "));
+            Drawing.drawing.drawInterfaceText(posX, Drawing.drawing.interfaceSizeY / 2 + (i + 1) * 40 - 60, (index + i + 2) + ". " + crusade.levels.get(index + i + 1).levelName.replace("_", " "));
         }
 
         Drawing.drawing.setColor(0, 0, 0, 127);
@@ -211,7 +211,7 @@ public class ScreenCrusadePreviewLevel extends Screen implements ILevelPreviewSc
 
         Drawing.drawing.setInterfaceFontSize(this.textSize);
         Drawing.drawing.setColor(255, 255, 255);
-        Drawing.drawing.drawInterfaceText(posX, Drawing.drawing.interfaceSizeY / 2 - 60, (index + 1) + ". " + crusade.levelNames.get(index).replace("_", " "));
+        Drawing.drawing.drawInterfaceText(posX, Drawing.drawing.interfaceSizeY / 2 - 60, (index + 1) + ". " + crusade.levels.get(index).levelName.replace("_", " "));
 
         this.back.draw();
         this.next.draw();

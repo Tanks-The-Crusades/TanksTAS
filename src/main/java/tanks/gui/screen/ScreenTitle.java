@@ -1,16 +1,11 @@
 package tanks.gui.screen;
 
 import basewindow.InputCodes;
-import tanks.Drawing;
-import tanks.Game;
-import tanks.Movable;
-import tanks.Panel;
+import tanks.*;
 import tanks.gui.Button;
 import tanks.obstacle.Obstacle;
 import tanks.tank.TankPlayer;
 import tanks.tank.Turret;
-
-import java.net.URL;
 
 public class ScreenTitle extends Screen implements ISeparateBackgroundScreen
 {
@@ -23,71 +18,51 @@ public class ScreenTitle extends Screen implements ISeparateBackgroundScreen
 	public double rCenterX;
 	public double rCenterY;
 
-	Button exit = new Button(this.rCenterX, this.rCenterY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Exit the game", new Runnable()
+	Button exit = new Button(this.rCenterX, this.rCenterY + this.objYSpace * 1.5, this.objWidth, this.objHeight, "Exit the game", () ->
 	{
-		@Override
-		public void run() 
+		if (Game.framework == Game.Framework.libgdx)
+			Game.screen = new ScreenExit();
+		else
 		{
-			if (Game.framework == Game.Framework.libgdx)
-				Game.screen = new ScreenExit();
-			else
-			{
-				if (Game.game.window.soundsEnabled)
-					Game.game.window.soundPlayer.exit();
+			if (Game.game.window.soundsEnabled)
+				Game.game.window.soundPlayer.exit();
 
-				Game.game.window.windowHandler.onWindowClose();
+			Game.game.window.windowHandler.onWindowClose();
 
-				System.exit(0);
-			}
-		}
-	}
-			);
-	
-	Button options = new Button(this.rCenterX, this.rCenterY - this.objYSpace * 0.5, this.objWidth, this.objHeight, "Options", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			Game.silentCleanUp();
-			Game.screen = new ScreenOptions();
-		}
-	}
-			);
-
-	Button debug = new Button(this.rCenterX, this.rCenterY + this.objYSpace * 3, this.objWidth, this.objHeight, "Debug menu", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			Game.silentCleanUp();
-			Game.screen = new ScreenDebug();
-		}
-	}
-	);
-
-	Button about = new Button(this.rCenterX, this.rCenterY + this.objYSpace * 0.5, this.objWidth, this.objHeight, "About", new Runnable()
-	{
-		@Override
-		public void run()
-		{
-			Game.silentCleanUp();
-			Game.screen = new ScreenAbout();
+			System.exit(0);
 		}
 	}
 	);
 	
-	Button play = new Button(this.rCenterX, this.rCenterY - this.objYSpace * 1.5, this.objWidth, this.objHeight, "Play!", new Runnable()
+	Button options = new Button(this.rCenterX, this.rCenterY - this.objYSpace * 0.5, this.objWidth, this.objHeight, "Options", () ->
 	{
-		@Override
-		public void run() 
-		{
-			Game.silentCleanUp();
-			Game.screen = new ScreenPlay();
-		}
+		Game.silentCleanUp();
+		Game.screen = new ScreenOptions();
 	}
-			);
+	);
 
-	Button takeControl = new Button(logo.posX, logo.posY, Game.tile_size, Game.tile_size, "", new Runnable()
+	Button debug = new Button(this.rCenterX, this.rCenterY + this.objYSpace * 3, this.objWidth, this.objHeight, "Debug menu", () ->
+	{
+		Game.silentCleanUp();
+		Game.screen = new ScreenDebug();
+	}
+	);
+
+	Button about = new Button(this.rCenterX, this.rCenterY + this.objYSpace * 0.5, this.objWidth, this.objHeight, "About", () ->
+	{
+		Game.silentCleanUp();
+		Game.screen = new ScreenAbout();
+	}
+	);
+	
+	Button play = new Button(this.rCenterX, this.rCenterY - this.objYSpace * 1.5, this.objWidth, this.objHeight, "Play!", () ->
+	{
+		Game.silentCleanUp();
+		Game.screen = new ScreenPlay();
+	}
+	);
+
+	Button takeControl = new Button(0, 0, Game.tile_size, Game.tile_size, "", new Runnable()
 	{
 		@Override
 		public void run()
@@ -103,22 +78,27 @@ public class ScreenTitle extends Screen implements ISeparateBackgroundScreen
 	}
 		);
 
+	Button languages = new Button(-1000, -1000, this.objHeight * 1.5, this.objHeight * 1.5, "", () ->
+	{
+		Game.silentCleanUp();
+		Game.screen = new ScreenLanguage();
+	}
+	);
+
 	public ScreenTitle()
 	{
 		Game.movables.clear();
-		this.logo.size *= 1.5 * Drawing.drawing.interfaceScaleZoom * this.objHeight / 40;
-		this.logo.turret.length *= 1.5 * Drawing.drawing.interfaceScaleZoom * this.objHeight / 40;
-		this.logo.invulnerable = true;
-		this.logo.drawAge = 50;
-		this.logo.depthTest = false;
-
-		Game.movables.add(logo);
 		ScreenGame.finished = false;
 
 		takeControl.silent = true;
 
 		this.music = "menu_1.ogg";
 		this.musicID = "menu";
+
+		languages.image = "icons/language.png";
+
+		languages.imageSizeX = this.objHeight;
+		languages.imageSizeY = this.objHeight;
 	}
 	
 	@Override
@@ -128,8 +108,17 @@ public class ScreenTitle extends Screen implements ISeparateBackgroundScreen
 		exit.update();
 		options.update();
 
+		languages.posX = -(Game.game.window.absoluteWidth / Drawing.drawing.interfaceScale - Drawing.drawing.interfaceSizeX) / 2
+				+ Game.game.window.getEdgeBounds() / Drawing.drawing.interfaceScale + 50 * Drawing.drawing.interfaceScaleZoom;
+		languages.posY = ((Game.game.window.absoluteHeight - Drawing.drawing.statsHeight) / Drawing.drawing.interfaceScale - Drawing.drawing.interfaceSizeY) / 2
+				+ Drawing.drawing.interfaceSizeY - 50 * Drawing.drawing.interfaceScaleZoom;
+
+		languages.update();
+
 		if (Drawing.drawing.interfaceScaleZoom == 1)
+		{
 			takeControl.update();
+		}
 
 		if (Game.debug)
 			debug.update();
@@ -169,20 +158,51 @@ public class ScreenTitle extends Screen implements ISeparateBackgroundScreen
 
 	public void drawWithoutBackground()
 	{
+		if (this.logo == null)
+		{
+			this.logo = new TankPlayer(Drawing.drawing.sizeX / 2, Drawing.drawing.sizeY / 2 - 250 * Drawing.drawing.interfaceScaleZoom, 0);
+			takeControl.posX = logo.posX;
+			takeControl.posY = logo.posY;
+			this.logo.size *= 1.5 * Drawing.drawing.interfaceScaleZoom * this.objHeight / 40;
+			this.logo.invulnerable = true;
+			this.logo.drawAge = 50;
+			this.logo.depthTest = false;
+
+			if (Drawing.drawing.interfaceScaleZoom > 1)
+			{
+				this.logo.posY += 180 * Drawing.drawing.interfaceScaleZoom;
+				this.logo.posX -= 260 * Drawing.drawing.interfaceScaleZoom;
+			}
+
+			Game.movables.add(logo);
+		}
+
 		play.draw();
 		exit.draw();
 		options.draw();
+		languages.draw();
 
 		if (Game.debug)
 			debug.draw();
 
 		about.draw();
 
-		Drawing.drawing.setColor(0, 0, 0);
+
+		Drawing.drawing.setColor(Turret.calculateSecondaryColor(0), Turret.calculateSecondaryColor(150), Turret.calculateSecondaryColor(255));
 		Drawing.drawing.setInterfaceFontSize(this.titleSize * 2.5);
-		Drawing.drawing.drawInterfaceText(this.lCenterX, this.lCenterY - this.objYSpace, "Tanks");
+		Drawing.drawing.displayInterfaceText(this.lCenterX + 4, 4 + this.lCenterY - this.objYSpace, "Tanks");
+
+		Drawing.drawing.setColor(0, 0, 0);
 		Drawing.drawing.setInterfaceFontSize(this.titleSize);
-		Drawing.drawing.drawInterfaceText(this.lCenterX, this.lCenterY - this.objYSpace * 2 / 9, "The Crusades");
+		Drawing.drawing.displayInterfaceText(this.lCenterX + 2, 2 + this.lCenterY - this.objYSpace * 2 / 9, "The Crusades");
+
+		Drawing.drawing.setColor(0, 150, 255);
+		Drawing.drawing.setInterfaceFontSize(this.titleSize * 2.5);
+		Drawing.drawing.displayInterfaceText(this.lCenterX, this.lCenterY - this.objYSpace, "Tanks");
+
+		Drawing.drawing.setColor(Turret.calculateSecondaryColor(0), Turret.calculateSecondaryColor(150), Turret.calculateSecondaryColor(255));
+		Drawing.drawing.setInterfaceFontSize(this.titleSize);
+		Drawing.drawing.displayInterfaceText(this.lCenterX, this.lCenterY - this.objYSpace * 2 / 9, "The Crusades");
 
 		for (int i = 0; i < Game.tracks.size(); i++)
 		{
@@ -231,8 +251,6 @@ public class ScreenTitle extends Screen implements ISeparateBackgroundScreen
 		this.rCenterX = Drawing.drawing.interfaceSizeX / 2;
 		this.rCenterY = Drawing.drawing.interfaceSizeY / 2 + this.objYSpace * 1.5;
 
-		this.logo = new TankPlayer(Drawing.drawing.sizeX / 2, Drawing.drawing.sizeY / 2 - 250 * Drawing.drawing.interfaceScaleZoom, 0);
-
 		if (Drawing.drawing.interfaceScaleZoom > 1)
 		{
 			this.rCenterX = Drawing.drawing.interfaceSizeX / 2 + this.objXSpace / 2;
@@ -240,9 +258,6 @@ public class ScreenTitle extends Screen implements ISeparateBackgroundScreen
 
 			this.lCenterX = Drawing.drawing.interfaceSizeX / 2 - this.objXSpace / 2;
 			this.lCenterY = Drawing.drawing.interfaceSizeY / 2 + this.objYSpace * 1.5;
-
-			this.logo.posY += 180 * Drawing.drawing.interfaceScaleZoom;
-			this.logo.posX -= 260 * Drawing.drawing.interfaceScaleZoom;
 		}
 	}
 }

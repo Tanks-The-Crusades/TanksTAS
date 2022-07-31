@@ -8,67 +8,37 @@ import tanks.gui.SpeedrunTimer;
 import tanks.gui.screen.Screen;
 import tanks.gui.screen.ScreenSavedLevels;
 
-public class OverlayEditorMenu extends ScreenLevelBuilderOverlay
+public class OverlayEditorMenu extends ScreenLevelEditorOverlay
 {
     public boolean showTime = false;
 
-    public Button resume = new Button(this.centerX, this.centerY - this.objYSpace, this.objWidth, this.objHeight, "Edit", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            escape();
-        }
-    });
+    public Button resume = new Button(this.centerX, this.centerY - this.objYSpace, this.objWidth, this.objHeight, "Edit", this::escape);
 
-    public Button play = new Button(this.centerX, (int) (this.centerY - this.objYSpace * 2), this.objWidth, this.objHeight, "Play", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.play();
-        }
-    }
+    public Button play = new Button(this.centerX, (int) (this.centerY - this.objYSpace * 2), this.objWidth, this.objHeight, "Play", () -> screenLevelEditor.play()
     );
 
     public Button playUnavailable = new Button(this.centerX, (int) (this.centerY - this.objYSpace * 2), this.objWidth, this.objHeight, "Play", "You must add a player---spawn point to play!");
 
-    public Button options = new Button(this.centerX, (int) (this.centerY + 0), this.objWidth, this.objHeight, "Options", new Runnable()
+    public Button options = new Button(this.centerX, (int) (this.centerY + 0), this.objWidth, this.objHeight, "Options", () -> Game.screen = new OverlayLevelOptions(Game.screen, screenLevelEditor)
+    );
+
+    public Button quit = new Button(this.centerX, (int) (this.centerY + this.objYSpace * 2), this.objWidth, this.objHeight, "Exit", () ->
     {
-        @Override
-        public void run()
-        {
-            Game.screen = new OverlayLevelOptions(Game.screen, screenLevelEditor);
-        }
+        screenLevelEditor.save();
+
+        Game.cleanUp();
+        Game.screen = new ScreenSavedLevels();
     }
     );
 
-    public Button quit = new Button(this.centerX, (int) (this.centerY + this.objYSpace * 2), this.objWidth, this.objHeight, "Exit", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            screenLevelEditor.save();
-
-            Game.cleanUp();
-            Game.screen = new ScreenSavedLevels();
-        }
-    }
-    );
-
-    public Button delete = new Button(this.centerX, (int) (this.centerY + this.objYSpace), this.objWidth, this.objHeight, "Delete level", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new OverlayConfirmDelete(Game.screen, screenLevelEditor);
-        }
-    }
+    public Button delete = new Button(this.centerX, (int) (this.centerY + this.objYSpace), this.objWidth, this.objHeight, "Delete level", () -> Game.screen = new OverlayConfirmDelete(Game.screen, screenLevelEditor)
     );
 
     public OverlayEditorMenu(Screen previous, ScreenLevelEditor screenLevelEditor)
     {
         super(previous, screenLevelEditor);
+
+        this.allowClose = false;
 
         if (!screenLevelEditor.level.editable)
         {
@@ -77,8 +47,8 @@ public class OverlayEditorMenu extends ScreenLevelBuilderOverlay
             quit.posY -= 60;
         }
 
-        this.music = "editor_paused.ogg";
-        this.musicID = "editor";
+        //this.music = "editor_paused.ogg";
+        //this.musicID = "editor";
     }
 
     public void update()
@@ -87,6 +57,7 @@ public class OverlayEditorMenu extends ScreenLevelBuilderOverlay
         {
             resume.update();
             options.update();
+            super.update();
         }
 
         delete.update();
@@ -96,8 +67,6 @@ public class OverlayEditorMenu extends ScreenLevelBuilderOverlay
             play.update();
         else
             playUnavailable.update();
-
-        super.update();
 
         if (Game.game.input.editorPlay.isValid() && screenLevelEditor.spawns.size() > 0)
         {
@@ -131,7 +100,7 @@ public class OverlayEditorMenu extends ScreenLevelBuilderOverlay
 
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
         Drawing.drawing.setColor(screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness, screenLevelEditor.fontBrightness);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Level menu");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Level menu");
 
         if (Game.showSpeedrunTimer && showTime)
             SpeedrunTimer.draw();

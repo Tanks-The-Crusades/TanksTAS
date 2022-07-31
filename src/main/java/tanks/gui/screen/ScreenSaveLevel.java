@@ -19,7 +19,7 @@ public class ScreenSaveLevel extends Screen implements ILevelPreviewScreen
 
     public Screen screen;
 
-    public ArrayList<TankSpawnMarker> spawns = new ArrayList<TankSpawnMarker>();
+    public ArrayList<TankSpawnMarker> spawns = new ArrayList<>();
 
     public Button back = new Button(Drawing.drawing.interfaceSizeX - 580, Drawing.drawing.interfaceSizeY - 90, this.objWidth, this.objHeight, "Back", new Runnable()
     {
@@ -68,9 +68,9 @@ public class ScreenSaveLevel extends Screen implements ILevelPreviewScreen
                 downloaded = true;
 
                 if (fromInterlevel)
-                    download.text = "Level saved!";
+                    download.setText("Level saved!");
                 else
-                    download.text = "Level downloaded!";
+                    download.setText("Level downloaded!");
             }
         }
     });
@@ -90,25 +90,21 @@ public class ScreenSaveLevel extends Screen implements ILevelPreviewScreen
 
         for (int i = 0; i < drawables.length; i++)
         {
-            drawables[i] = new ArrayList<IDrawable>();
+            drawables[i] = new ArrayList<>();
         }
 
         Obstacle.draw_size = Game.tile_size;
 
-        levelName = new TextBox(Drawing.drawing.interfaceSizeX - 200, Drawing.drawing.interfaceSizeY - 150, this.objWidth, this.objHeight, "Level save name", new Runnable()
+        levelName = new TextBox(Drawing.drawing.interfaceSizeX - 200, Drawing.drawing.interfaceSizeY - 150, this.objWidth, this.objHeight, "Level save name", () ->
         {
-            @Override
-            public void run()
-            {
-                if (levelName.inputText.equals(""))
-                    levelName.inputText = levelName.previousInputText;
-                updateDownloadButton();
-            }
-
+            if (levelName.inputText.equals(""))
+                levelName.inputText = levelName.previousInputText;
+            updateDownloadButton();
         }
                 , name.replace("_", " "));
 
         levelName.enableCaps = true;
+        levelName.maxChars = 18;
 
         this.updateDownloadButton();
 
@@ -211,15 +207,15 @@ public class ScreenSaveLevel extends Screen implements ILevelPreviewScreen
 
         if (file.exists())
         {
-            download.text = "Pick a different name...";
+            download.setText("Pick a different name...");
             download.enabled = false;
         }
         else
         {
             if (fromInterlevel)
-                download.text = "Save";
+                download.setText("Save");
             else
-                download.text = "Download";
+                download.setText("Download");
 
             download.enabled = true;
         }

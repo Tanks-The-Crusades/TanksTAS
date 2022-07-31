@@ -1,10 +1,12 @@
 package tanks.gui;
 
+import basewindow.IModel;
 import basewindow.InputCodes;
 import basewindow.InputPoint;
 import tanks.*;
 import tanks.gui.screen.ScreenInfo;
 import tanks.gui.screen.ScreenSelector;
+import tanks.translation.Translation;
 
 import java.util.ArrayList;
 
@@ -15,7 +17,10 @@ public class Selector implements IDrawable, ITrigger
     public double posY;
     public double sizeX;
     public double sizeY;
+
+    public String rawText;
     public String text;
+    public String translatedText;
 
     public boolean enableHover = false;
     public String[] hoverText;
@@ -46,12 +51,15 @@ public class Selector implements IDrawable, ITrigger
     public ArrayList<Effect> glowEffects = new ArrayList<>();
 
     public String[] images;
+    public IModel[] models;
 
     public boolean quick = false;
 
     public boolean silent = false;
 
     public boolean format = true;
+    public boolean translate = true;
+    public boolean music = false;
 
     public boolean drawBehindScreen = false;
 
@@ -80,7 +88,7 @@ public class Selector implements IDrawable, ITrigger
         this.posY = y;
         this.sizeX = sX;
         this.sizeY = sY;
-        this.text = text;
+        this.setText(text);
         this.options = o;
     }
 
@@ -98,7 +106,7 @@ public class Selector implements IDrawable, ITrigger
         this.posY = y;
         this.sizeX = sX;
         this.sizeY = sY;
-        this.text = text;
+        this.setText(text);
         this.options = o;
 
         this.enabled = false;
@@ -163,12 +171,9 @@ public class Selector implements IDrawable, ITrigger
 
         drawing.setColor(0, 0, 0);
 
-        drawing.drawInterfaceText(posX, posY - sizeY * 13 / 16, text);
+        drawing.drawInterfaceText(posX, posY - sizeY * 13 / 16, translatedText);
 
-        if (format)
-            Drawing.drawing.drawInterfaceText(posX, posY, Game.formatString(options[selectedOption]));
-        else
-            Drawing.drawing.drawInterfaceText(posX, posY, options[selectedOption]);
+        this.drawSelection();
 
         if (enableHover)
         {
@@ -206,6 +211,29 @@ public class Selector implements IDrawable, ITrigger
             Drawing.drawing.setColor(255, 255, 255);
             Drawing.drawing.drawInterfaceImage(images[selectedOption], this.posX - this.sizeX / 2 + this.sizeY / 2 + 10, this.posY, this.sizeY, this.sizeY);
         }
+
+        if (models != null)
+        {
+            Drawing.drawing.setColor(255, 255, 255);
+            Drawing.drawing.drawInterfaceModel2D(models[selectedOption], this.posX - this.sizeX / 2 + this.sizeY / 2 + 10, this.posY, 0, this.sizeY, this.sizeY, this.sizeY);
+        }
+    }
+
+    public void drawSelection()
+    {
+        String s = options[selectedOption];
+
+        if (music)
+            s = s.substring(s.indexOf("tank/") + "tank/".length(), s.indexOf(".ogg"));
+
+        if (format)
+            s = Game.formatString(s);
+
+
+        if (translate)
+            Drawing.drawing.drawInterfaceText(posX, posY, Translation.translate(s));
+        else
+            Drawing.drawing.drawInterfaceText(posX, posY, s);
     }
 
     public void update()
@@ -278,6 +306,12 @@ public class Selector implements IDrawable, ITrigger
         Button.addEffect(this.posX, this.posY, this.sizeX - this.sizeY * (1 - 0.8), this.sizeY * 0.8, this.glowEffects);
     }
 
+    public void submitEffect()
+    {
+        for (int i = 0; i < 0.2 * (this.sizeX + this.sizeY) * Game.effectMultiplier; i++)
+            Button.addEffect(this.posX, this.posY, this.sizeX - this.sizeY * (1 - 0.8), this.sizeY * 0.8, this.glowEffects, Math.random() * 4, 0.8, 0.25);
+    }
+
     public boolean checkMouse(double mx, double my, boolean valid)
     {
         boolean handled = false;
@@ -297,9 +331,8 @@ public class Selector implements IDrawable, ITrigger
             {
                 handled = true;
                 Drawing.drawing.playSound("bullet_explode.ogg", 2f, 0.3f);
-                //Drawing.drawing.playSound(this.sound, 1f, 1f);
                 Drawing.drawing.playVibration("click");
-                Game.screen = new ScreenInfo(Game.screen, this.text, this.hoverText);
+                Game.screen = new ScreenInfo(Game.screen, this.translatedText, this.hoverText);
             }
             else if (enabled)
             {
@@ -310,7 +343,6 @@ public class Selector implements IDrawable, ITrigger
                 if (!this.silent)
                 {
                     Drawing.drawing.playSound("bullet_explode.ogg", 2f, 0.3f);
-                    //Drawing.drawing.playSound(this.sound, 1f, 1f);
                     Drawing.drawing.playVibration("click");
                 }
             }
@@ -327,14 +359,26 @@ public class Selector implements IDrawable, ITrigger
 
     public void setScreen()
     {
+        this.resetLayout();
         ScreenSelector s = new ScreenSelector(this, Game.screen);
         s.images = this.images;
+        s.models = this.models;
 
         if (this.images != null)
             s.drawImages = true;
 
+        if (this.models != null)
+            s.drawModels = true;
+
         s.drawBehindScreen = this.drawBehindScreen;
         Game.screen = s;
+    }
+
+    public void resetLayout()
+    {
+        Drawing.drawing.interfaceScaleZoom = Drawing.drawing.interfaceScaleZoomDefault;
+        Drawing.drawing.interfaceSizeX = Drawing.drawing.interfaceSizeX / Drawing.drawing.interfaceScaleZoom;
+        Drawing.drawing.interfaceSizeY = Drawing.drawing.interfaceSizeY / Drawing.drawing.interfaceScaleZoom;
     }
 
     @Override
@@ -342,5 +386,32 @@ public class Selector implements IDrawable, ITrigger
     {
         this.posX = x;
         this.posY = y;
+    }
+
+    public void setText(String text)
+    {
+        this.rawText = text;
+        this.text = text;
+        this.translatedText = Translation.translate(text);
+    }
+
+    public void setText(String text, String text2)
+    {
+        this.rawText = text + text2;
+        this.text = text + text2;
+        this.translatedText = Translation.translate(text) + Translation.translate(text2);
+    }
+
+    public void setText(String text, Object... objects)
+    {
+        this.rawText = text;
+        this.text = String.format(text, objects);
+        this.translatedText = Translation.translate(text, objects);
+    }
+
+    public void setTextArgs(Object... objects)
+    {
+        this.text = String.format(this.rawText, objects);
+        this.translatedText = Translation.translate(this.rawText, objects);
     }
 }

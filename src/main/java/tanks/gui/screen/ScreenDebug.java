@@ -3,8 +3,8 @@ package tanks.gui.screen;
 import tanks.Drawing;
 import tanks.Game;
 import tanks.gui.Button;
-import tanks.tank.Tank;
 import tanks.tank.TankMimic;
+import tanks.tank.TankModels;
 
 public class ScreenDebug extends Screen
 {
@@ -18,59 +18,31 @@ public class ScreenDebug extends Screen
         this.musicID = "menu";
 
         if (Game.traceAllRays)
-            traceAllRays.text = traceText + ScreenOptions.onText;
+            traceAllRays.setText(traceText, ScreenOptions.onText);
         else
-            traceAllRays.text = traceText + ScreenOptions.offText;
+            traceAllRays.setText(traceText, ScreenOptions.offText);
 
         if (Game.firstPerson)
-            firstPerson.text = firstPersonText + ScreenOptions.onText;
+            firstPerson.setText(firstPersonText, ScreenOptions.onText);
         else
-            firstPerson.text = firstPersonText + ScreenOptions.offText;
+            firstPerson.setText(firstPersonText, ScreenOptions.offText);
 
         if (Game.followingCam)
-            followingCam.text = followingCamText + ScreenOptions.onText;
+            followingCam.setText(followingCamText, ScreenOptions.onText);
         else
-            followingCam.text = followingCamText + ScreenOptions.offText;
+            followingCam.setText(followingCamText, ScreenOptions.offText);
     }
 
-    Button back = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 210, this.objWidth, this.objHeight, "Back", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenTitle();
-        }
-    }
+    Button back = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 210, this.objWidth, this.objHeight, "Back", () -> Game.screen = new ScreenTitle()
     );
 
-    Button keyboardTest = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 150, this.objWidth, this.objHeight, "Test keyboard", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenTestKeyboard();
-        }
-    }
+    Button keyboardTest = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 150, this.objWidth, this.objHeight, "Test keyboard", () -> Game.screen = new ScreenTestKeyboard()
     );
 
-    Button textboxTest = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 90, this.objWidth, this.objHeight, "Test text boxes", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenTestTextbox();
-        }
-    }
+    Button textboxTest = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 90, this.objWidth, this.objHeight, "Test text boxes", () -> Game.screen = new ScreenTestTextbox()
     );
 
-    Button modelTest = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 30, this.objWidth, this.objHeight, "Test models", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenTestModel(TankMimic.turret_base_model);
-        }
-    }
+    Button modelTest = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 30, this.objWidth, this.objHeight, "Test models", () -> Game.screen = new ScreenTestModel(Drawing.drawing.createModel("/models/tankcamoflauge/base/"))
     );
 
     Button traceAllRays = new Button(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 30, this.objWidth, this.objHeight, "", new Runnable()
@@ -81,9 +53,9 @@ public class ScreenDebug extends Screen
             Game.traceAllRays = !Game.traceAllRays;
 
             if (Game.traceAllRays)
-                traceAllRays.text = traceText + ScreenOptions.onText;
+                traceAllRays.setText(traceText, ScreenOptions.onText);
             else
-                traceAllRays.text = traceText + ScreenOptions.offText;
+                traceAllRays.setText(traceText, ScreenOptions.offText);
         }
     });
 
@@ -95,9 +67,9 @@ public class ScreenDebug extends Screen
             Game.firstPerson = !Game.firstPerson;
 
             if (Game.firstPerson)
-                firstPerson.text = firstPersonText + ScreenOptions.onText;
+                firstPerson.setText(firstPersonText, ScreenOptions.onText);
             else
-                firstPerson.text = firstPersonText + ScreenOptions.offText;
+                firstPerson.setText(firstPersonText, ScreenOptions.offText);
         }
     });
 
@@ -109,9 +81,9 @@ public class ScreenDebug extends Screen
             Game.followingCam = !Game.followingCam;
 
             if (Game.followingCam)
-                followingCam.text = followingCamText + ScreenOptions.onText;
+                followingCam.setText(followingCamText, ScreenOptions.onText);
             else
-                followingCam.text = followingCamText + ScreenOptions.offText;
+                followingCam.setText(followingCamText, ScreenOptions.offText);
         }
     });
 
@@ -133,7 +105,7 @@ public class ScreenDebug extends Screen
         this.drawDefaultBackground();
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
         Drawing.drawing.setColor(0, 0, 0);
-        Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 210, "Debug menu");
+        Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 210, "Debug menu");
 
         firstPerson.draw();
         followingCam.draw();

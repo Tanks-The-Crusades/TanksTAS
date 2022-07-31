@@ -15,24 +15,13 @@ public class ScreenOptionsInputTouchscreen extends Screen
     public static final String singleText = "\u00A7000100200255single";
     public static final String dualText = "\u00A7200100000255dual";
 
-    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            Game.screen = new ScreenOptions();
-        }
-    }
+    Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", () -> Game.screen = new ScreenOptions()
     );
 
-    Button test = new Button(this.centerX, this.centerY + this.objYSpace * 2, this.objWidth, this.objHeight, "Test controls in tutorial", new Runnable()
+    Button test = new Button(this.centerX, this.centerY + this.objYSpace * 2, this.objWidth, this.objHeight, "Test controls in tutorial", () ->
     {
-        @Override
-        public void run()
-        {
-            ScreenOptions.saveOptions(Game.homedir);
-            new Tutorial().loadTutorial(false, Game.game.window.touchscreen);
-        }
+        ScreenOptions.saveOptions(Game.homedir);
+        new Tutorial().loadTutorial(false, Game.game.window.touchscreen);
     });
 
 
@@ -44,9 +33,9 @@ public class ScreenOptionsInputTouchscreen extends Screen
             Game.enableVibrations = !Game.enableVibrations;
 
             if (Game.enableVibrations)
-                vibrations.text = vibrationsText + ScreenOptions.onText;
+                vibrations.setText(vibrationsText, ScreenOptions.onText);
             else
-                vibrations.text = vibrationsText + ScreenOptions.offText;
+                vibrations.setText(vibrationsText, ScreenOptions.offText);
         }
     },
             "When enabled, your device---will vibrate a little as---feedback for interacting with---joysticks, buttons, etc...------Not supported on all devices");
@@ -61,9 +50,9 @@ public class ScreenOptionsInputTouchscreen extends Screen
             TankPlayer.controlStick.posY = TankPlayer.controlStick.basePosY;
 
             if (TankPlayer.controlStick.mobile)
-                mobile.text = mobileText + ScreenOptions.onText;
+                mobile.setText(mobileText, ScreenOptions.onText);
             else
-                mobile.text = mobileText + ScreenOptions.offText;
+                mobile.setText(mobileText, ScreenOptions.offText);
 
             TankPlayer.controlStickMobile = TankPlayer.controlStick.mobile;
         }
@@ -80,9 +69,9 @@ public class ScreenOptionsInputTouchscreen extends Screen
             TankPlayer.controlStick.posY = TankPlayer.controlStick.basePosY;
 
             if (TankPlayer.controlStick.snap)
-                snap.text = snapText + ScreenOptions.onText;
+                snap.setText(snapText, ScreenOptions.onText);
             else
-                snap.text = snapText + ScreenOptions.offText;
+                snap.setText(snapText, ScreenOptions.offText);
 
             TankPlayer.controlStickSnap = TankPlayer.controlStick.snap;
         }
@@ -101,19 +90,19 @@ public class ScreenOptionsInputTouchscreen extends Screen
 
             if (!TankPlayer.shootStickEnabled)
             {
-                dualJoysticks.text = dualJoysticksText + singleText;
+                dualJoysticks.setText(dualJoysticksText, singleText);
                 snap.enabled = true;
 
                 if (TankPlayer.controlStick.snap)
-                    snap.text = snapText + ScreenOptions.onText;
+                    snap.setText(snapText, ScreenOptions.onText);
                 else
-                    snap.text = snapText + ScreenOptions.offText;
+                    snap.setText(snapText, ScreenOptions.offText);
             }
             else
             {
-                dualJoysticks.text = dualJoysticksText + dualText;
+                dualJoysticks.setText(dualJoysticksText, dualText);
                 snap.enabled = false;
-                snap.text = snapText + ScreenOptions.onText;
+                snap.setText(snapText, ScreenOptions.onText);
             }
         }
     },
@@ -131,35 +120,35 @@ public class ScreenOptionsInputTouchscreen extends Screen
             Game.enableVibrations = false;
 
         if (Game.enableVibrations)
-            vibrations.text = vibrationsText + ScreenOptions.onText;
+            vibrations.setText(vibrationsText, ScreenOptions.onText);
         else
-            vibrations.text = vibrationsText + ScreenOptions.offText;
+            vibrations.setText(vibrationsText, ScreenOptions.offText);
 
         if (TankPlayer.controlStick.snap)
-            snap.text = snapText + ScreenOptions.onText;
+            snap.setText(snapText, ScreenOptions.onText);
         else
-            snap.text = snapText + ScreenOptions.offText;
+            snap.setText(snapText, ScreenOptions.offText);
 
         if (TankPlayer.controlStick.mobile)
-            mobile.text = mobileText + ScreenOptions.onText;
+            mobile.setText(mobileText, ScreenOptions.onText);
         else
-            mobile.text = mobileText + ScreenOptions.offText;
+            mobile.setText(mobileText, ScreenOptions.offText);
 
         if (!TankPlayer.shootStickEnabled)
         {
-            dualJoysticks.text = dualJoysticksText + singleText;
+            dualJoysticks.setText(dualJoysticksText, singleText);
             snap.enabled = true;
 
             if (TankPlayer.controlStick.snap)
-                snap.text = snapText + ScreenOptions.onText;
+                snap.setText(snapText, ScreenOptions.onText);
             else
-                snap.text = snapText + ScreenOptions.offText;
+                snap.setText(snapText, ScreenOptions.offText);
         }
         else
         {
-            dualJoysticks.text = dualJoysticksText + dualText;
+            dualJoysticks.setText(dualJoysticksText, dualText);
             snap.enabled = false;
-            snap.text = snapText + ScreenOptions.onText;
+            snap.setText(snapText, ScreenOptions.onText);
         }
     }
 
@@ -187,7 +176,7 @@ public class ScreenOptionsInputTouchscreen extends Screen
 
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
         Drawing.drawing.setColor(0, 0, 0);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Input options");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.5, "Input options");
     }
 
 }

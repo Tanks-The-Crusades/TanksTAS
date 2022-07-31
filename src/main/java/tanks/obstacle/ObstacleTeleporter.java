@@ -7,6 +7,9 @@ import tanks.tank.TeleporterOrb;
 
 import java.util.ArrayList;
 
+/**
+ * A teleporter which randomly transports the player to another teleporter in the level
+ */
 public class ObstacleTeleporter extends Obstacle
 {
 	public double cooldown;
@@ -32,17 +35,17 @@ public class ObstacleTeleporter extends Obstacle
 		this.draggable = false;
 		this.enableStacking = false;
 
+		this.batchDraw = false;
+
 		glow = Effect.createNewEffect(this.posX, this.posY, 0, Effect.EffectType.teleporterLight);
 
-		this.description = "A teleporter which randomly---transports you to another---teleporter in the level";
+		this.description = "A teleporter which randomly transports you to another teleporter in the level";
 	}
 
 	@Override
 	public void draw()
 	{
-		Drawing.drawing.setColor(127, 127, 127, 255, 0.25);
-
-		double height = Game.sampleGroundHeight(this.posX, this.posY);
+		double height = this.baseGroundHeight;
 
 		if (Game.enable3d)
 		{
@@ -113,7 +116,7 @@ public class ObstacleTeleporter extends Obstacle
 	@Override
 	public void update()
 	{
-		ArrayList<ObstacleTeleporter> teleporters = new ArrayList<ObstacleTeleporter>();
+		ArrayList<ObstacleTeleporter> teleporters = new ArrayList<>();
 		Tank t = null;
 
 		if (!ScreenGame.finished)

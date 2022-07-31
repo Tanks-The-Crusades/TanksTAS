@@ -28,9 +28,9 @@ public class BulletArc extends Bullet
 
     public ArrayList<Double> pastTime = new ArrayList<>();
 
-    public BulletArc(double x, double y, Tank t, boolean affectsMaxLiveBullets, ItemBullet ib)
+    public BulletArc(double x, double y, Tank t, int bounces, boolean affectsMaxLiveBullets, ItemBullet ib)
     {
-        super(x, y, 0, t, affectsMaxLiveBullets, ib);
+        super(x, y, bounces, t, affectsMaxLiveBullets, ib);
         this.playPopSound = false;
         this.name = bullet_name;
         //this.effect = BulletEffect.trail;
@@ -49,18 +49,9 @@ public class BulletArc extends Bullet
         this.autoZ = false;
     }
 
-    public BulletArc(double x, double y, int bounces, Tank t)
+    public BulletArc(double x, double y, int bounces, Tank t, ItemBullet ib)
     {
-        this(x, y, t, true, null);
-    }
-
-    /**
-     * Do not use, instead use the constructor with primitive data types.
-     */
-    @Deprecated
-    public BulletArc(Double x, Double y, Integer bounces, Tank t, ItemBullet ib)
-    {
-        this(x, y, t, true, ib);
+        this(x, y, t, bounces, true, ib);
     }
 
     @Override
@@ -81,21 +72,37 @@ public class BulletArc extends Bullet
 
         this.vZ -= gravity * Panel.frameFrequency * gravMod;
 
-        if (this.posZ <= Game.tile_size / 2 && !this.destroy)
+        if (this.posZ < Game.tile_size / 2 && !this.destroy)
         {
-            double dif = (this.posZ - Game.tile_size / 2) / this.vZ;
-            this.posX -= dif * this.vX;
-            this.posY -= dif * this.vY;
+            if (this.bounces > 0)
+            {
+                this.bounces--;
+                this.posZ += 2 * ((Game.tile_size / 2) - this.posZ);
+                this.vZ = Math.abs(this.vZ) * 0.75;
 
-            this.vX = 0;
-            this.vY = 0;
-            this.vZ = 0;
+                if (!this.tank.isRemote)
+                    this.checkCollision();
 
-            if (!this.tank.isRemote)
-                this.checkCollision();
+                this.checkCollisionLocal();
+            }
+            else
+            {
+                double dif = (this.posZ - Game.tile_size / 2) / this.vZ;
+                this.posX -= dif * this.vX;
+                this.posY -= dif * this.vY;
 
-            this.checkCollisionLocal();
-            this.destroy = true;
+                this.vX = 0;
+                this.vY = 0;
+                this.vZ = 0;
+
+                if (!this.tank.isRemote)
+                    this.checkCollision();
+
+                this.checkCollisionLocal();
+
+                this.destroy = true;
+            }
+
             Drawing.drawing.playSound("bullet_explode.ogg", (float) (Bullet.bullet_size / this.size));
         }
 
@@ -134,7 +141,7 @@ public class BulletArc extends Bullet
                 Drawing.drawing.fillOval(this.posX, this.posY, this.size, this.size);
 
             Drawing.drawing.setColor(0, 0, 0, 0, 0.5);
-            Game.game.window.setBatchMode(true, true, true, false);
+            Game.game.window.shapeRenderer.setBatchMode(true, true, true, false);
             for (int i = this.pastTime.size() - 1; i >= 1; i--)
             {
                 if (stop)
@@ -174,7 +181,7 @@ public class BulletArc extends Bullet
                     Drawing.drawing.addVertex(x1 + this.size / 2 * ax, y1 + this.size / 2 * ay, z1);
                 }
             }
-            Game.game.window.setBatchMode(false, true, true, false);
+            Game.game.window.shapeRenderer.setBatchMode(false, true, true, false);
         }
 
         if (this.destroyTimer <= 60)

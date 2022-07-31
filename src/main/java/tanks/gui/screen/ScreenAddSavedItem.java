@@ -1,13 +1,14 @@
 package tanks.gui.screen;
 
 import basewindow.BaseFile;
-import tanks.Crusade;
 import tanks.Drawing;
 import tanks.Game;
 import tanks.Level;
 import tanks.gui.Button;
 import tanks.gui.SavedFilesList;
+import tanks.gui.SearchBox;
 import tanks.hotbar.item.Item;
+import tanks.translation.Translation;
 
 import java.util.ArrayList;
 
@@ -15,6 +16,7 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
 {
     public static int itemPage;
 
+    public SavedFilesList allItems;
     public SavedFilesList items;
     public boolean drawBehindScreen;
 
@@ -26,6 +28,17 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
     public boolean removeNow = false;
 
     public int builtInItemsCount = 0;
+
+    SearchBox search = new SearchBox(this.centerX, this.centerY - this.objYSpace * 4, this.objWidth * 1.25, this.objHeight, "Search", new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            createNewItemsList();
+            items.filter(search.inputText);
+            items.sortButtons();
+        }
+    }, "");
 
     public Button quit = new Button(this.centerX + this.objXSpace / 2, this.centerY + this.objYSpace * 5, this.objWidth, this.objHeight, "Back", new Runnable()
     {
@@ -46,35 +59,35 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
             deleting = !deleting;
 
             if (deleting)
-                deleteMode.text = "Stop deleting";
+                deleteMode.setText("Stop deleting");
             else
-                deleteMode.text = "Delete templates";
+                deleteMode.setText("Delete templates");
 
-            for (Button b: items.buttons)
+            for (Button b: allItems.buttons)
                 b.enabled = !deleting;
         }
     }
     );
 
-    public Button delete = new Button(0, 0, 32, 32, "x", new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            removeNow = true;
-        }
-    });
+    public Button delete = new Button(0, 0, 32, 32, "x", () -> removeNow = true);
 
     public ScreenAddSavedItem(IItemScreen itemScreen, Button prev)
     {
+        this(itemScreen, prev, Item.class);
+    }
+
+    public ScreenAddSavedItem(IItemScreen itemScreen, Button prev, Class<? extends Item> itemClass)
+    {
         super(350, 40, 380, 60);
-        
+
+        this.allowClose = false;
+
         this.music = ((Screen)itemScreen).music;
         this.musicID = ((Screen)itemScreen).musicID;
         this.itemScreen = itemScreen;
         this.back = prev;
 
-        items = new SavedFilesList(Game.homedir + Game.itemDir, itemPage, 0, -30,
+        allItems = new SavedFilesList(Game.homedir + Game.itemDir, itemPage, 0, -30,
                 (name, file) ->
                 {
                     try
@@ -103,16 +116,17 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
                         b.imageSizeX = b.sizeY;
                         b.imageSizeY = b.sizeY;
 
-                        int p = i.price;
-                        String price = p + " ";
-                        if (p == 0)
-                            price = "Free!";
-                        else if (p == 1)
-                            price += "coin";
-                        else
-                            price += "coins";
+                        if (!itemClass.isAssignableFrom(i.getClass()))
+                            b.text = null;
 
-                        b.subtext = price;
+                        int p = i.price;
+
+                        if (p == 0)
+                            b.setSubtext("Free!");
+                        else if (p == 1)
+                            b.setSubtext("1 coin");
+                        else
+                            b.setSubtext("%d coins", p);
                     }
                     catch (Exception e)
                     {
@@ -124,43 +138,41 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
 
         for (String s: items)
         {
-            builtInItemsCount++;
             Item i = Item.parseItem(null, s);
+            i.name = Translation.translate(i.name);
 
-            Button b = new Button(0, 0, this.items.objWidth, this.items.objHeight, "", new Runnable()
+            if (itemClass.isAssignableFrom(i.getClass()))
             {
-                @Override
-                public void run()
+                builtInItemsCount++;
+
+                Button b = new Button(0, 0, this.allItems.objWidth, this.allItems.objHeight, i.name, () ->
                 {
-                    Item i = Item.parseItem(null, s);
-                    i.importProperties();
-                    itemScreen.addItem(i);
+                    Item i1 = Item.parseItem(null, s);
+                    i1.name = Translation.translate(i1.name);
+                    i1.importProperties();
+                    itemScreen.addItem(i1);
                 }
+                );
+
+                this.allItems.buttons.add(b);
+
+                b.translated = false;
+
+                b.image = i.icon;
+                b.imageXOffset = -b.sizeX / 2 + b.sizeY / 2 + 10;
+                b.imageSizeX = b.sizeY;
+                b.imageSizeY = b.sizeY;
+
+                int p = i.price;
+
+                if (p == 0)
+                    b.setSubtext("Free!");
+                else if (p == 1)
+                    b.setSubtext("1 coin");
+                else
+                    b.setSubtext("%d coins", p);
             }
-            );
-
-            this.items.buttons.add(b);
-
-            b.text = i.name;
-
-            b.image = i.icon;
-            b.imageXOffset = - b.sizeX / 2 + b.sizeY / 2 + 10;
-            b.imageSizeX = b.sizeY;
-            b.imageSizeY = b.sizeY;
-
-            int p = i.price;
-            String price = p + " ";
-            if (p == 0)
-                price = "Free!";
-            else if (p == 1)
-                price += "coin";
-            else
-                price += "coins";
-
-            b.subtext = price;
         }
-
-        this.items.sortButtons();
 
         delete.textOffsetY = -1;
         delete.textOffsetX = 1;
@@ -177,7 +189,17 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
         delete.selectedColG = 127;
         delete.selectedColB = 127;
 
+        this.items = this.allItems.clone();
+        this.createNewItemsList();
+
         delete.fontSize = this.textSize;
+    }
+
+    public void createNewItemsList()
+    {
+        items.buttons.clear();
+        items.buttons.addAll(allItems.buttons);
+        items.sortButtons();
     }
 
     @Override
@@ -185,16 +207,18 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
     {
         items.update();
         quit.update();
+        search.update();
         deleteMode.update();
 
         if (deleting)
         {
             for (int i = Math.min(items.page * items.rows * items.columns + items.rows * items.columns, items.buttons.size()) - 1; i >= items.page * items.rows * items.columns; i--)
             {
-                if (i >= items.buttons.size() - builtInItemsCount)
+                Button b = items.buttons.get(i);
+
+                if (allItems.buttons.indexOf(b) >= allItems.buttons.size() - builtInItemsCount)
                     continue;
 
-                Button b = items.buttons.get(i);
                 delete.posX = b.posX + b.sizeX / 2 - b.sizeY / 2;
                 delete.posY = b.posY;
                 delete.update();
@@ -202,7 +226,11 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
                 if (removeNow)
                 {
                     removeNow = false;
-                    BaseFile f = Game.game.fileManager.getFile(Game.homedir + Game.itemDir + "/" + items.buttons.remove(i).text.replace(" ", "_") + ".tanks");
+
+                    Button b1 = items.buttons.remove(i);
+                    BaseFile f = Game.game.fileManager.getFile(Game.homedir + Game.itemDir + "/" + b1.text.replace(" ", "_") + ".tanks");
+
+                    allItems.buttons.remove(b1);
 
                     while (f.exists())
                     {
@@ -231,18 +259,21 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
 
         items.draw();
         quit.draw();
+        search.draw();
         deleteMode.draw();
 
         if (deleting)
         {
             for (int i = Math.min(items.page * items.rows * items.columns + items.rows * items.columns, items.buttons.size()) - 1; i >= items.page * items.rows * items.columns; i--)
             {
-                if (i >= items.buttons.size() - builtInItemsCount)
+                Button b = items.buttons.get(i);
+
+                if (allItems.buttons.indexOf(b) >= allItems.buttons.size() - builtInItemsCount)
                     continue;
 
-                Button b = items.buttons.get(i);
                 delete.posX = b.posX + b.sizeX / 2 - b.sizeY / 2;
                 delete.posY = b.posY;
+                delete.update();
                 delete.draw();
             }
         }
@@ -253,7 +284,7 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
             Drawing.drawing.setColor(0, 0, 0);
 
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 4.5, "Item templates");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 5, "Item templates");
     }
 
     @Override
@@ -296,5 +327,11 @@ public class ScreenAddSavedItem extends Screen implements IConditionalOverlayScr
             return ((IConditionalOverlayScreen) itemScreen).isOverlayEnabled();
 
         return itemScreen instanceof ScreenGame || itemScreen instanceof ILevelPreviewScreen || itemScreen instanceof IOverlayScreen;
+    }
+
+    @Override
+    public void onAttemptClose()
+    {
+        ((Screen)this.itemScreen).onAttemptClose();
     }
 }

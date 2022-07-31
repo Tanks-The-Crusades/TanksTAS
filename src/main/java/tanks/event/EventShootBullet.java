@@ -3,6 +3,7 @@ package tanks.event;
 import io.netty.buffer.ByteBuf;
 import tanks.Game;
 import tanks.bullet.*;
+import tanks.hotbar.item.ItemBullet;
 import tanks.network.NetworkUtils;
 import tanks.tank.Tank;
 
@@ -63,7 +64,7 @@ public class EventShootBullet extends PersonalEvent
 
 		try
 		{
-			bullet = Game.registryBullet.getEntry(this.name).bullet.getConstructor(double.class, double.class, int.class, Tank.class).newInstance(0.0, 0.0, 0, t);
+			bullet = Game.registryBullet.getEntry(this.name).bullet.getConstructor(double.class, double.class, int.class, Tank.class, ItemBullet.class).newInstance(0.0, 0.0, 0, t, t.bullet);
 		}
 		catch (Exception e)
 		{
@@ -103,11 +104,12 @@ public class EventShootBullet extends PersonalEvent
 				bullet.effect = Bullet.BulletEffect.ember;
 				break;
 		}
-		
+
 		bullet.bounces = this.bounces;
 		bullet.damage = this.damage;
 		bullet.size = this.size;
 		bullet.heavy = this.heavy;
+		bullet.speed = Math.sqrt(this.vX * this.vX + this.vY * this.vY);
 
 		bullet.networkID = this.id;
 		Bullet.idMap.put(this.id, bullet);

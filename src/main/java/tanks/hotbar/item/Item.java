@@ -1,10 +1,9 @@
 package tanks.hotbar.item;
 
-import tanks.Game;
-import tanks.IGameObject;
-import tanks.Movable;
-import tanks.Player;
-import tanks.hotbar.item.property.*;
+import tanks.*;
+import tanks.gui.IFixedMenu;
+import tanks.gui.Scoreboard;
+import tanks.gui.property.*;
 import tanks.tank.Tank;
 import tanks.tank.TankPlayerRemote;
 
@@ -14,8 +13,8 @@ import java.util.LinkedHashMap;
 
 public abstract class Item implements IGameObject
 {
-	public static ArrayList<String> icons = new ArrayList<String>(Arrays.asList("item.png", "bullet_normal.png", "bullet_mini.png", "bullet_large.png", "bullet_fire.png", "bullet_fire_trail.png", "bullet_dark_fire.png", "bullet_flame.png",
-			"bullet_laser.png", "bullet_healing.png", "bullet_electric.png", "bullet_freeze.png", "bullet_arc.png", "bullet_explosive.png", "bullet_boost.png",
+	public static ArrayList<String> icons = new ArrayList<>(Arrays.asList("item.png", "bullet_normal.png", "bullet_mini.png", "bullet_large.png", "bullet_fire.png", "bullet_fire_trail.png", "bullet_dark_fire.png", "bullet_flame.png",
+			"bullet_laser.png", "bullet_healing.png", "bullet_electric.png", "bullet_freeze.png", "bullet_arc.png", "bullet_explosive.png", "bullet_boost.png", "bullet_air.png", "bullet_homing.png",
 			"mine.png",
 			"shield.png", "shield_gold.png"));
 
@@ -27,20 +26,32 @@ public abstract class Item implements IGameObject
 	public int price;
 	public int maxStackSize = 100;
 	public int stackSize = 1;
+	public boolean unlimitedStack = false;
 	public boolean inUse = false;
 	public String name = System.currentTimeMillis() + "";
 	public String icon;
-	public LinkedHashMap<String, ItemProperty> properties = new LinkedHashMap<>();
+	public LinkedHashMap<String, UIProperty> properties = new LinkedHashMap<>();
 
 	public boolean destroy = false;
+	public double cooldown = 0;
 	
 	public boolean rightClick;
 
 	public Player player;
 
-	public abstract boolean usable();
-	
-	public abstract void use();
+	public boolean usable()
+	{
+		return this.usable(this.getUser());
+	}
+
+	public abstract boolean usable(Tank t);
+
+	public void use()
+	{
+		this.use(this.getUser());
+	}
+
+	public abstract void use(Tank user);
 
 	public Item(Player p)
 	{
@@ -55,12 +66,12 @@ public abstract class Item implements IGameObject
 		for (int i = 0; i < icons.size(); i++)
 			s[i] = icons.get(i);
 
-		new ItemPropertyString(this.properties,"name", this.name);
-		new ItemPropertyImageSelector(this.properties, "icon", s,0);
-		new ItemPropertyInt(this.properties, "amount", 1);
-		new ItemPropertyInt(this.properties, "max-stack-size", 100);
-		new ItemPropertyInt(this.properties, "unlocks-after-level", 0);
-		new ItemPropertyInt(this.properties, "price", 1);
+		new UIPropertyString(this.properties,"name", this.name);
+		new UIPropertyImageSelector(this.properties, "icon", s,0);
+		new UIPropertyInt(this.properties, "amount", 1);
+		new UIPropertyInt(this.properties, "max-stack-size", 100);
+		new UIPropertyInt(this.properties, "unlocks-after-level", 0);
+		new UIPropertyInt(this.properties, "price", 1);
 	}
 
 
@@ -68,6 +79,9 @@ public abstract class Item implements IGameObject
 	 * <br>if (type == bullet):-class-effect-speed-bounces-damage-max_on_screen-cooldown-size*/
 	public static Item parseItem(Player pl, String s)
 	{
+		if (s.contains("[") && s.contains("]"))
+			s = s.substring(s.indexOf("[") + 1, s.indexOf("]"));
+
 		String[] p = s.split(",");
 
 		String name = p[0];
@@ -98,17 +112,39 @@ public abstract class Item implements IGameObject
 		
 		return i;
 	}
-	
-	@Override
-	public String toString()
+
+	public String convertToString()
 	{
 		return name + "," + icon + "," + price + "," + levelUnlock + "," + stackSize + "," + maxStackSize;
 	}
 
+	@Override
+	public String toString()
+	{
+		return "[" + convertToString() + "]";
+	}
+
 	public void attemptUse()
 	{
-		if (this.usable())
-			use();
+		this.attemptUse(this.getUser());
+	}
+
+	public void attemptUse(Tank t)
+	{
+		if (this.usable(t))
+		{
+			use(t);
+
+			/*for (IFixedMenu m : ModAPI.menuGroup)
+			{
+				if (m instanceof Scoreboard && ((Scoreboard) m).objectiveType.equals(Scoreboard.objectiveTypes.items_used)) {
+					if (((Scoreboard) m).players.isEmpty())
+						((Scoreboard) m).addTeamScore(this.player.tank.team, 1);
+					else
+						((Scoreboard) m).addPlayerScore(this.player, 1);
+				}
+			} TODO*/
+		}
 	}
 
 	public abstract void fromString(String s);
@@ -135,34 +171,34 @@ public abstract class Item implements IGameObject
 
 	public Object getProperty(String s)
 	{
-		ItemProperty p = this.properties.get(s);
+		UIProperty p = this.properties.get(s);
 		Object o = p.value;
 
-		if (p instanceof ItemPropertySelector)
-			return ((ItemPropertySelector) p).values[(int) o];
-		else if (p instanceof ItemPropertyImageSelector)
-			return ((ItemPropertyImageSelector) p).values[(int) o];
+		if (p instanceof UIPropertySelector)
+			return ((UIPropertySelector) p).values[(int) o];
+		else if (p instanceof UIPropertyImageSelector)
+			return ((UIPropertyImageSelector) p).values[(int) o];
 
 		return o;
 	}
 
 	public void setProperty(String s, Object value)
 	{
-		ItemProperty p = this.properties.get(s);
+		UIProperty p = this.properties.get(s);
 
-		if (p instanceof ItemPropertySelector)
+		if (p instanceof UIPropertySelector)
 		{
-			for (int i = 0; i < ((ItemPropertySelector) p).values.length; i++)
+			for (int i = 0; i < ((UIPropertySelector) p).values.length; i++)
 			{
-				if (((ItemPropertySelector) p).values[i].equals(value))
+				if (((UIPropertySelector) p).values[i].equals(value))
 					p.value = i;
 			}
 		}
-		else if (p instanceof ItemPropertyImageSelector)
+		else if (p instanceof UIPropertyImageSelector)
 		{
-			for (int i = 0; i < ((ItemPropertyImageSelector) p).values.length; i++)
+			for (int i = 0; i < ((UIPropertyImageSelector) p).values.length; i++)
 			{
-				if (((ItemPropertyImageSelector) p).values[i].equals(value))
+				if (((UIPropertyImageSelector) p).values[i].equals(value))
 					p.value = i;
 			}
 		}
@@ -172,16 +208,17 @@ public abstract class Item implements IGameObject
 
 	public Tank getUser()
 	{
-		if (this.player == Game.player)
+		if (this.player == null)
+			return null;
+		else if (this.player == Game.player)
 		{
 			return Game.playerTank;
 		}
 		else
 		{
-			for (int i = 0; i < Game.movables.size(); i++)
+			for (Movable m: Game.movables)
 			{
-				Movable m = Game.movables.get(i);
-				if (m instanceof TankPlayerRemote && ((TankPlayerRemote) m).player == this.player)
+				if (m instanceof TankPlayerRemote && ((TankPlayerRemote) m).player.clientID.equals(this.player.clientID))
 				{
 					return (Tank) m;
 				}
@@ -189,6 +226,26 @@ public abstract class Item implements IGameObject
 		}
 
 		return null;
+	}
+
+	public void updateCooldown()
+	{
+		this.cooldown = Math.max(0, this.cooldown - Panel.frameFrequency);
+	}
+
+	public Item clone()
+	{
+		Item i = Item.parseItem(this.player, this.toString());
+		i.unlimitedStack = this.unlimitedStack;
+		return i;
+	}
+
+	public void setOtherItemsCooldown()
+	{
+		Tank user = this.getUser();
+
+		if (user != null)
+			user.setBufferCooldown(20);
 	}
 
 	public abstract String getTypeName();

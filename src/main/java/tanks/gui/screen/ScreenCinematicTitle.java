@@ -9,6 +9,7 @@ import tanks.obstacle.Obstacle;
 import tanks.tank.Mine;
 import tanks.tank.Tank;
 import tanks.tank.TankDummyLoadingScreen;
+import tanks.tank.Turret;
 
 public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundScreen
 {
@@ -23,7 +24,6 @@ public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundS
     {
         this.logo = new TankDummyLoadingScreen(-200, Drawing.drawing.sizeY / 2);
         this.logo.size *= 2;
-        this.logo.turret.length *= 2 * Drawing.drawing.interfaceScaleZoom * this.objHeight / 40;
         this.logo.invulnerable = true;
         this.logo.drawAge = 50;
         this.logo.depthTest = false;
@@ -31,7 +31,7 @@ public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundS
         Game.movables.add(logo);
         ScreenGame.finished = false;
 
-        mine = new Mine(this.centerX + 200, this.centerY, this.logo);
+        mine = new Mine(this.centerX + 200, this.centerY, this.logo, this.logo.mine);
         mine.size *= 2;
         mine.radius *= 2;
         mine.timer = 100000;
@@ -42,9 +42,12 @@ public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundS
     {
         /*Drawing.drawing.setInterfaceFontSize(70);
         Drawing.drawing.setColor(0, 0, 0);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - 70, "But be careful!");
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 70,"One mistake, and its over!");*/
-        //Drawing.drawing.drawInterfaceText(this.centerX, this.centerY,"Make your own levels!");
+        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - 70, "Go wild with a hundred options");
+        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 70,"to customize for each tank!");*/
+        //Drawing.drawing.drawInterfaceText(this.centerX, this.centerY,"Make your own custom tanks!");
+
+        Drawing.drawing.setColor(174, 92, 16);
+        Drawing.drawing.fillInterfaceRect(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2, Game.game.window.absoluteWidth / Drawing.drawing.interfaceScale, Game.game.window.absoluteHeight / Drawing.drawing.interfaceScale);
 
         Drawing.drawing.setColor(255, 255, 255);
         Drawing.drawing.drawInterfaceImage("img.png", this.centerX, this.centerY, Drawing.drawing.interfaceSizeX, Drawing.drawing.interfaceSizeY);
@@ -52,13 +55,22 @@ public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundS
         Drawing.drawing.setColor(255, 255, 255, 127);
         Drawing.drawing.fillInterfaceRect(Math.min(t * 20 / 2, Drawing.drawing.interfaceSizeX / 2), this.centerY, Math.min(t * 20, Drawing.drawing.interfaceSizeX), 280);
 
+
         if (mine.destroy)
         {
             t2 = Math.min(t2 + Panel.frameFrequency * 2, 50);
-            Drawing.drawing.setColor(0, 0, 0);
 
+            Drawing.drawing.setColor(Turret.calculateSecondaryColor(0), Turret.calculateSecondaryColor(150), Turret.calculateSecondaryColor(255));
+            Drawing.drawing.setInterfaceFontSize(160 * t2 / 50);
+            Drawing.drawing.drawInterfaceText(mine.posX + 8, mine.posY - t2 * 0.5 + 8, "Tanks");
+            Drawing.drawing.setInterfaceFontSize(64 * t2 / 50);
+            Drawing.drawing.setColor(0, 0, 0);
+            Drawing.drawing.drawInterfaceText(mine.posX + 4, mine.posY + t2 * 1.5 + 4, "The Crusades");
+
+            Drawing.drawing.setColor(0, 150, 255);
             Drawing.drawing.setInterfaceFontSize(160 * t2 / 50);
             Drawing.drawing.drawInterfaceText(mine.posX, mine.posY - t2 * 0.5, "Tanks");
+            Drawing.drawing.setColor(Turret.calculateSecondaryColor(0), Turret.calculateSecondaryColor(150), Turret.calculateSecondaryColor(255));
             Drawing.drawing.setInterfaceFontSize(64 * t2 / 50);
             Drawing.drawing.drawInterfaceText(mine.posX, mine.posY + t2 * 1.5, "The Crusades");
         }
@@ -70,9 +82,9 @@ public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundS
             Drawing.drawing.fillInterfaceGlow(this.centerX, this.centerY + 170, 600, 140);
             Drawing.drawing.fillInterfaceGlow(this.centerX, this.centerY + 340, 1200, 140);
             Drawing.drawing.setColor(0, 0, 0, a);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 170, "Update 1.2");
-
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 340, "Now coming to Steam!");
+            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 170, "Update 1.4");
+            Drawing.drawing.setInterfaceFontSize(64 * t2 / 75);
+            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 340, "Make your own custom tanks!");
 
         }
 
@@ -111,7 +123,7 @@ public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundS
             {
                 Drawing.drawing.playGlobalSound("shoot.ogg");
 
-                Bullet b = new Bullet(this.logo.posX, this.logo.posY, 0, this.logo);
+                Bullet b = new Bullet(this.logo.posX, this.logo.posY, 0, this.logo, this.logo.bullet);
                 b.size *= 2;
                 b.setPolarMotion(this.logo.angle, 3.125);
                 this.logo.addPolarMotion(b.getPolarDirection() + Math.PI, 25.0 / 32.0);
